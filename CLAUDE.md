@@ -319,6 +319,34 @@ P6 Bank/
 
 ---
 
+## For Reviewers: How to Check Answers
+
+### Quick Start
+1. Open the app: **[Your Streamlit URL]**
+2. Use the **filters** on the left to select:
+   - **School** (e.g., Red Swastika)
+   - **Paper Section** (e.g., Paper 1 Booklet B)
+3. Each question shows:
+   - Question image (left)
+   - Extracted text (right)
+   - **Green box with answer** below
+
+### What to Check
+For each question, verify:
+1. Does the **answer match** what you see in the question image?
+2. For multi-part questions (a), (b), (c): Does each part have the **correct** answer?
+
+### If You Find an Error
+Report the following:
+- School name
+- Paper section (P1A, P1B, or P2)
+- Question number
+- What the answer **should be**
+
+Example: "Red Swastika P1B Q21(b) should be 30, not 11/12"
+
+---
+
 ## Deployment (Streamlit Cloud)
 
 ### Setup Steps

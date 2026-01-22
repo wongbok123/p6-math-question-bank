@@ -90,8 +90,8 @@ def main():
             index=0,
         )
 
-        # Show answer toggle
-        show_answers = st.checkbox("Show Answers", value=False)
+        # Show answer toggle (default ON for easy verification)
+        show_answers = st.checkbox("Show Answers", value=True)
 
         st.divider()
 
@@ -241,19 +241,9 @@ def main():
                     with st.expander("Diagram Description"):
                         st.markdown(q["diagram_description"])
 
-            # Answer section
-            if show_answers and (q.get("answer") or q.get("worked_solution")):
-                with st.expander("Show Answer"):
-                    if q.get("answer"):
-                        st.markdown(f"**Answer:** {q['answer']}")
-
-                    if q.get("worked_solution"):
-                        st.markdown("**Working:**")
-                        st.markdown(q["worked_solution"])
-
-                    if q.get("answer_diagram_description"):
-                        st.markdown("**Answer Diagram:**")
-                        st.markdown(q["answer_diagram_description"])
+            # Answer section - shown directly for easy verification
+            if show_answers and q.get("answer"):
+                st.success(f"**Answer:** {q['answer']}")
 
             # Edit section (only shown when edit mode is enabled)
             if edit_mode:
