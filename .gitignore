@@ -11,9 +11,12 @@ __pycache__/
 venv/
 ENV/
 
-# Output and data (large files)
-output/
+# Source PDFs (large, not needed for viewing)
 pdfs/
+
+# Backup files
+*.backup
+*_backup.txt
 
 # IDE
 .vscode/

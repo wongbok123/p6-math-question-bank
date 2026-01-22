@@ -25,6 +25,7 @@
 1. **Test P1B Part (b) Fix**
    - Re-run `verify_and_solve.py` on one exam paper with P1B multi-part questions
    - Check that Q21(a) and Q21(b) have DIFFERENT answers
+   - Check that Q25(a) and Q25(b) have DIFFERENT answers
    - Verify in UI that both parts display correctly
 
 2. **Validate on 2 More Test Papers**
@@ -313,7 +314,38 @@ P6 Bank/
 └── CLAUDE.md             # This file
 ```
 
-**Note**: `pdfs/` and `output/` are in `.gitignore` - they contain local data only.
+**Note**: `pdfs/` is in `.gitignore` (source files not needed for viewing).
+`output/` is committed to GitHub for Streamlit Cloud deployment.
+
+---
+
+## Deployment (Streamlit Cloud)
+
+### Setup Steps
+1. Push code to GitHub (already done)
+2. Go to [share.streamlit.io](https://share.streamlit.io)
+3. Click "New app"
+4. Select repo: `wongbok123/p6-math-question-bank`
+5. Branch: `main`
+6. Main file path: `ui/app.py`
+7. Click "Deploy"
+
+### What Users Can Do
+- Browse all questions by school/section/marks
+- View question images and extracted text
+- See answers and worked solutions
+- **Cannot** run extraction (no API key on cloud)
+
+### Edit Mode on Cloud
+- Password: `p6math2025`
+- **Warning**: Edits on Streamlit Cloud are temporary (reset on redeploy)
+- For permanent edits, modify locally and push to GitHub
+
+### Updating Questions
+1. Run extraction locally with your API key
+2. Commit updated `output/p6_questions.db` and images
+3. Push to GitHub
+4. Streamlit Cloud auto-redeploys
 
 ---
 
