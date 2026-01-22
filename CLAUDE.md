@@ -293,23 +293,27 @@ CREATE TABLE questions (
 ```
 P6 Bank/
 ├── gemini_pipeline.py    # Extract questions from PDF pages
-├── verify_and_solve.py   # Hybrid: verify answer key + solve if wrong [NEW]
-├── solve_questions.py    # Direct AI solver for questions [NEW]
-├── parse_answers.py      # Legacy: simple Q# matching
+├── verify_and_solve.py   # Hybrid: verify answer key + solve if wrong
+├── solve_questions.py    # Direct AI solver for questions
+├── parse_answers.py      # Legacy: simple Q# matching (kept for reference)
+├── segmenter.py          # OpenCV question region detection
 ├── database.py           # SQLite operations
 ├── config.py             # Paths and settings
+├── requirements.txt      # Python dependencies
 ├── .env                  # GEMINI_API_KEY (not committed)
 ├── utils/
 │   └── gemini_client.py  # Gemini API client + prompts
 ├── ui/
-│   └── app.py            # Streamlit viewer
-├── pdfs/                 # Input PDFs
-├── output/
+│   └── app.py            # Streamlit viewer with edit mode
+├── pdfs/                 # Input PDFs (not committed)
+├── output/               # Generated data (not committed)
 │   ├── p6_questions.db   # SQLite database
 │   └── images/           # Extracted page images
-│       └── answer_keys/  # Answer key page images (worked solutions)
+│       └── answer_keys/  # Answer key page images
 └── CLAUDE.md             # This file
 ```
+
+**Note**: `pdfs/` and `output/` are in `.gitignore` - they contain local data only.
 
 ---
 
