@@ -13,8 +13,72 @@
 - [x] **Prototype UI**: Streamlit viewer for verification
 - [x] **Hybrid Verify-Solve**: AI verifies answer key matches, solves if wrong (v0.4)
 - [x] **Multi-Part Splitting**: Q6(a), Q6(b) stored as separate entries (v0.5)
+- [x] **Manual Editing**: Password-protected UI editing (v0.6)
+- [x] **P1B Multi-Part Fix**: Fixed P1B part (b) answer extraction (v0.6)
+- [ ] **Topic Tagging**: Tag questions by topic, type, heuristics (Phase 2)
 
-### Recent Fixes (v0.5) - January 2025
+---
+
+## Next Steps (TODO)
+
+### Immediate Testing (Current Session)
+1. **Test P1B Part (b) Fix**
+   - Re-run `verify_and_solve.py` on one exam paper with P1B multi-part questions
+   - Check that Q21(a) and Q21(b) have DIFFERENT answers
+   - Verify in UI that both parts display correctly
+
+2. **Validate on 2 More Test Papers**
+   - Run full pipeline on 2 additional school papers
+   - Confirm P1B multi-part extraction works across different formats
+   - Document any edge cases
+
+3. **Then Process All Papers**
+   - Once validated, run on remaining exam papers
+
+### Phase 2: Topic Tagging (Future)
+Build and test incrementally:
+1. **Step 1**: Implement tagging on 1 exam paper
+   - Design tag categories (topics, question types, difficulty)
+   - Create Gemini prompt for auto-tagging
+   - Add tags to database schema
+2. **Step 2**: Test on 2 more papers
+   - Validate tag consistency
+   - Refine prompts based on results
+3. **Step 3**: Apply to all papers
+   - Batch process all existing questions
+   - Add tag filters to UI
+
+---
+
+### Recent Fixes (v0.6) - January 2025
+
+#### Manual Editing Feature
+- **Password-protected edit mode** in Streamlit UI
+- Default password: `p6math2025` (change in `ui/app.py` line 100)
+- Editable fields:
+  - Answer
+  - Worked solution
+  - Question text
+  - Main context (for multi-part questions)
+- Changes persist to database immediately
+
+#### P1B Multi-Part Answer Extraction Fix
+- **Problem**: P1B questions like Q21(a), Q21(b) only extracted part (a) answer
+- **Root cause**: `EXTRACT_ANSWERS_PROMPT` had no P1B multi-part examples
+- **Solution**:
+  - Added P1B examples: `"P1B_21a": "11/12", "P1B_21b": "30"`
+  - Updated fallback parser to handle part letters
+  - Now extracts each part as separate key
+
+#### New Database Function
+- `update_question_text()` - update question text and main_context fields
+
+#### GitHub Repository
+- Code now hosted at: https://github.com/wongbok123/p6-math-question-bank.git
+
+---
+
+### Previous Fixes (v0.5) - January 2025
 
 #### Multi-Part Question Splitting
 - **Problem**: Multi-part questions (Q6 with parts a, b, c) were stored as single entries with combined answers like "(a) 109° (b) 72°"
@@ -295,6 +359,7 @@ The hybrid approach solves the answer key matching problem:
 - [ ] Add batch processing UI
 - [ ] Add answer verification dashboard
 - [x] Save answer key page images for worked solution reference (v0.5)
+- [x] Manual editing with password protection (v0.6)
 
 ---
 
