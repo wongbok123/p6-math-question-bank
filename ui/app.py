@@ -213,11 +213,18 @@ def main():
 
             with col_img:
                 # Display question image
+                # Handle both absolute paths (local) and relative paths (cloud)
                 image_path = Path(q["image_path"])
                 if image_path.exists():
-                    st.image(str(image_path), use_column_width=True)
+                    st.image(str(image_path), use_container_width=True)
                 else:
-                    st.warning("Image not found")
+                    # Try relative path from project root (for Streamlit Cloud)
+                    filename = image_path.name
+                    relative_path = Path(__file__).parent.parent / "output" / "images" / filename
+                    if relative_path.exists():
+                        st.image(str(relative_path), use_container_width=True)
+                    else:
+                        st.warning("Image not found")
 
             with col_text:
                 # LaTeX text - show main context first if available
