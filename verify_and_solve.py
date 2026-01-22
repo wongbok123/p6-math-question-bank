@@ -221,40 +221,52 @@ SECTION DETECTION RULES:
    - Questions Q16-Q30 → P1B_
    - Questions Q1-Q17 with PARTS like (a), (b), (c) showing WORKING/SOLUTIONS → P2_
 
-CRITICAL: Questions with parts like Q6(a), Q7(b), Q8(a), Q9(a), Q10(a), Q11(a), etc.
-showing detailed working/solutions are PAPER 2 questions. Use P2_ prefix!
+CRITICAL FOR MULTI-PART QUESTIONS:
+- P1B questions (Q16-Q30) CAN have parts (a), (b), (c) - use "P1B_21a", "P1B_21b"
+- P2 questions (Q1-Q17) often have parts (a), (b), (c) - use "P2_6a", "P2_6b"
+- ALWAYS extract EACH PART as a SEPARATE key!
 
 OUTPUT FORMAT - JSON with section prefix:
 {
   "P1A_1": "4",
   "P1B_16": "324",
+  "P1B_21a": "11/12",
+  "P1B_21b": "30",
   "P2_6a": "109°",
-  "P2_6b": "72°",
-  "P2_7a": "4",
-  "P2_7b": "104"
+  "P2_6b": "72°"
 }
 
 RULES:
 1. ALWAYS include section prefix: P1A_, P1B_, or P2_
-2. For multi-part questions like Q6(a), Q6(b): use "P2_6a", "P2_6b" (lowercase letter)
-3. Include units: "$159.50", "1600ml", "92.36 cm²"
-4. If working is shown, extract ONLY the FINAL ANSWER value (last value calculated)
-5. Extract EVERY answer visible on the page
+2. **CRITICAL**: For multi-part questions, create SEPARATE entries for EACH part:
+   - Q21 with (a) 11/12 and (b) 30 → "P1B_21a": "11/12", "P1B_21b": "30"
+   - NOT "P1B_21": "11/12" (this loses part b!)
+3. Use lowercase part letters: "P1B_21a", "P2_6b" (not "P1B_21A")
+4. Include units: "$159.50", "1600ml", "92.36 cm²"
+5. If working is shown, extract ONLY the FINAL ANSWER value (last value calculated)
+6. Extract EVERY answer visible on the page - don't skip any parts!
 
-EXAMPLE - Page with Q6(a) through Q11(b):
+EXAMPLE - P1B answers (Q16-Q30):
+{
+  "P1B_16": "324",
+  "P1B_17": "45",
+  "P1B_18a": "1/4",
+  "P1B_18b": "3/8",
+  "P1B_19": "256",
+  "P1B_20a": "15",
+  "P1B_20b": "24",
+  "P1B_21a": "11/12",
+  "P1B_21b": "30"
+}
+
+EXAMPLE - P2 answers (Q1-Q17):
 {
   "P2_6a": "109°",
   "P2_6b": "72°",
   "P2_7a": "4",
   "P2_7b": "104",
   "P2_8a": "A",
-  "P2_8b": "4000ml",
-  "P2_9a": "$21",
-  "P2_9b": "50%",
-  "P2_10a": "40",
-  "P2_10b": "1.7",
-  "P2_11a": "10cm",
-  "P2_11b": "92.36 cm²"
+  "P2_8b": "4000ml"
 }
 
 Return ONLY valid JSON, no other text.
@@ -470,6 +482,7 @@ def _fallback_line_parsing(response_text: str, page_num: int) -> List[Tuple[str,
     """Fallback line-by-line parsing if JSON parsing fails."""
     answers = []
     current_q = None
+    current_part = None  # Track part letter (a, b, c)
     current_answer = None
     current_section = None
 
@@ -489,13 +502,16 @@ def _fallback_line_parsing(response_text: str, page_num: int) -> List[Tuple[str,
             current_section = 'P2'
             continue
 
-        # Check for Q# pattern
-        q_match = re.match(r'^Q(\d+)[:\s]+(.*)$', line, re.IGNORECASE)
+        # Check for Q# pattern with optional part letter: Q21, Q21(a), Q21a
+        q_match = re.match(r'^Q(\d+)\s*(?:\(([a-e])\)|([a-e]))?\s*[:\s]+(.*)$', line, re.IGNORECASE)
         if q_match:
             # Save previous
             if current_q and current_answer:
                 section = current_section or _infer_section(current_q)
-                key = f"{section}_{current_q}" if section else str(current_q)
+                if current_part:
+                    key = f"{section}_{current_q}{current_part.lower()}" if section else f"{current_q}{current_part.lower()}"
+                else:
+                    key = f"{section}_{current_q}" if section else str(current_q)
                 answers.append((key, CandidateAnswer(
                     question_num=current_q,
                     answer=normalize_mcq(current_answer) if section == 'P1A' else current_answer,
@@ -505,15 +521,41 @@ def _fallback_line_parsing(response_text: str, page_num: int) -> List[Tuple[str,
                 )))
 
             current_q = int(q_match.group(1))
-            current_answer = q_match.group(2).strip()
+            # Part letter can be in group 2 (parenthesized) or group 3 (not parenthesized)
+            current_part = q_match.group(2) or q_match.group(3)
+            current_answer = q_match.group(4).strip()
 
-        elif current_q and not current_answer:
-            current_answer = line
+        # Check for standalone part pattern: (a) answer, (b) answer
+        elif current_q:
+            part_match = re.match(r'^\(([a-e])\)\s*(.+)$', line, re.IGNORECASE)
+            if part_match:
+                # Save previous part if exists
+                if current_answer:
+                    section = current_section or _infer_section(current_q)
+                    if current_part:
+                        key = f"{section}_{current_q}{current_part.lower()}" if section else f"{current_q}{current_part.lower()}"
+                    else:
+                        key = f"{section}_{current_q}" if section else str(current_q)
+                    answers.append((key, CandidateAnswer(
+                        question_num=current_q,
+                        answer=normalize_mcq(current_answer) if section == 'P1A' else current_answer,
+                        section=section,
+                        working=None,
+                        source_page=page_num
+                    )))
+
+                current_part = part_match.group(1)
+                current_answer = part_match.group(2).strip()
+            elif not current_answer:
+                current_answer = line
 
     # Save last
     if current_q and current_answer:
         section = current_section or _infer_section(current_q)
-        key = f"{section}_{current_q}" if section else str(current_q)
+        if current_part:
+            key = f"{section}_{current_q}{current_part.lower()}" if section else f"{current_q}{current_part.lower()}"
+        else:
+            key = f"{section}_{current_q}" if section else str(current_q)
         answers.append((key, CandidateAnswer(
             question_num=current_q,
             answer=normalize_mcq(current_answer) if section == 'P1A' else current_answer,
