@@ -36,6 +36,35 @@
 3. **Then Process All Papers**
    - Once validated, run on remaining exam papers
 
+### Quality Assurance Workflow
+
+After extracting any paper, run the validation:
+
+```bash
+# 1. Validate extraction
+python3 validate_extraction.py --school "School Name"
+
+# 2. Fix issues found
+python3 fix_questions.py --school "School Name" --summary        # View summary
+python3 fix_questions.py --school "School Name" --list-page 29   # Check specific page
+python3 fix_questions.py --school "School Name" --renumber P2_0 P2_8  # Fix wrong Q#
+python3 fix_questions.py --school "School Name" --delete-page 22     # Delete bad page
+
+# 3. Re-validate until clean
+python3 validate_extraction.py --school "School Name"
+
+# 4. Use UI edit mode for answer corrections
+# Password: p6math2025
+```
+
+**Common Issues Detected:**
+- Missing questions (gaps in Q# sequence)
+- Invalid Q0 (wrong question number)
+- Duplicate multi-part answers (a=b)
+- Suspicious answers ("BLANK PAGE", "sorry", etc.)
+
+---
+
 ### Phase 2: Topic Tagging (Future)
 Build and test incrementally:
 1. **Step 1**: Implement tagging on 1 exam paper
