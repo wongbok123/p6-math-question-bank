@@ -384,6 +384,12 @@ Example: "Red Swastika P1B Q21(b) should be 30, not 11/12"
 
 ## Deployment (Streamlit Cloud)
 
+### Database: Firebase
+The app now uses **Firebase Firestore** for persistent storage:
+- Questions stored in Firestore (cloud database)
+- Solution images stored in Firebase Storage
+- Edits persist across redeployments
+
 ### Setup Steps
 1. Push code to GitHub (already done)
 2. Go to [share.streamlit.io](https://share.streamlit.io)
@@ -391,24 +397,44 @@ Example: "Red Swastika P1B Q21(b) should be 30, not 11/12"
 4. Select repo: `wongbok123/p6-math-question-bank`
 5. Branch: `main`
 6. Main file path: `ui/app.py`
-7. Click "Deploy"
+7. **Add Secrets** (Settings → Secrets):
+   - Copy contents from `firebase-key.json` into secrets as `[firebase]` section
+   - See `.streamlit/secrets.toml.example` for format
+8. Click "Deploy"
+
+### Firebase Secrets Format (for Streamlit Cloud)
+```toml
+[firebase]
+type = "service_account"
+project_id = "p6-math-question-bank"
+private_key_id = "your-key-id"
+private_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+client_email = "firebase-adminsdk-xxxxx@p6-math-question-bank.iam.gserviceaccount.com"
+client_id = "your-client-id"
+auth_uri = "https://accounts.google.com/o/oauth2/auth"
+token_uri = "https://oauth2.googleapis.com/token"
+```
 
 ### What Users Can Do
 - Browse all questions by school/section/marks
 - View question images and extracted text
 - See answers and worked solutions
-- **Cannot** run extraction (no API key on cloud)
+- **Edit answers** - changes persist in Firebase!
+- **Upload solution images** - stored in Firebase Storage
 
 ### Edit Mode on Cloud
 - Password: `p6math2026`
-- **Warning**: Edits on Streamlit Cloud are temporary (reset on redeploy)
-- For permanent edits, modify locally and push to GitHub
+- Edits now **persist** (stored in Firebase)
 
 ### Updating Questions
 1. Run extraction locally with your API key
-2. Commit updated `output/p6_questions.db` and images
-3. Push to GitHub
+2. Run `python migrate_to_firebase.py` to sync to Firebase
+3. Push code to GitHub
 4. Streamlit Cloud auto-redeploys
+
+### Local Development
+- Uses `firebase-key.json` for authentication
+- Set `USE_FIREBASE=false` env var to use SQLite instead
 
 ---
 

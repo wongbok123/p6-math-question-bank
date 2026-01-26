@@ -5,23 +5,50 @@ Streamlit UI for P6 Math Question Bank viewer.
 import streamlit as st
 from pathlib import Path
 import sys
+import os
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config import UI_PAGE_TITLE, UI_PAGE_ICON, UI_LAYOUT, PAPER_SECTIONS, SECTION_FULL_NAMES
-from database import (
-    get_questions,
-    get_all_schools,
-    get_all_years,
-    get_statistics,
-    init_db,
-    update_answer,
-    update_question_text,
-    update_question_metadata,
-)
 
-# Directory for uploaded solution images
+# Use Firebase if available, fallback to SQLite
+USE_FIREBASE = os.environ.get('USE_FIREBASE', 'true').lower() == 'true'
+
+try:
+    if USE_FIREBASE:
+        from firebase_db import (
+            get_questions,
+            get_all_schools,
+            get_all_years,
+            get_statistics,
+            init_db,
+            update_answer,
+            update_question_text,
+            update_question_metadata,
+            upload_image_bytes,
+            get_image_url,
+        )
+        USING_FIREBASE = True
+    else:
+        raise ImportError("Firebase disabled")
+except Exception as e:
+    # Fallback to SQLite
+    from database import (
+        get_questions,
+        get_all_schools,
+        get_all_years,
+        get_statistics,
+        init_db,
+        update_answer,
+        update_question_text,
+        update_question_metadata,
+    )
+    USING_FIREBASE = False
+    upload_image_bytes = None
+    get_image_url = None
+
+# Directory for uploaded solution images (local fallback)
 SOLUTIONS_DIR = Path(__file__).parent.parent / "output" / "images" / "solutions"
 SOLUTIONS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -263,22 +290,23 @@ def main():
                     # Check if there's a solution image reference
                     import re
                     img_match = re.search(r'\[Solution Image: (.+?)\]', worked)
-                    if img_match:
-                        img_filename = img_match.group(1)
-                        img_path = SOLUTIONS_DIR / img_filename
-                        if img_path.exists():
-                            with st.expander("View Worked Solution"):
-                                # Show text part (without image reference)
-                                text_part = re.sub(r'\[Solution Image: .+?\]', '', worked).strip()
-                                if text_part:
-                                    st.markdown(text_part)
+                    img_url_match = re.search(r'\[Solution URL: (.+?)\]', worked)
+
+                    with st.expander("View Worked Solution"):
+                        # Show text part (without image references)
+                        text_part = re.sub(r'\[Solution (?:Image|URL): .+?\]', '', worked).strip()
+                        if text_part:
+                            st.markdown(text_part)
+
+                        # Show image from Firebase URL
+                        if img_url_match:
+                            st.image(img_url_match.group(1), caption="Solution", use_column_width=True)
+                        # Or show local image
+                        elif img_match:
+                            img_filename = img_match.group(1)
+                            img_path = SOLUTIONS_DIR / img_filename
+                            if img_path.exists():
                                 st.image(str(img_path), caption="Solution", use_column_width=True)
-                        else:
-                            with st.expander("View Worked Solution"):
-                                st.markdown(worked)
-                    else:
-                        with st.expander("View Worked Solution"):
-                            st.markdown(worked)
 
             # Edit section (only shown when edit mode is enabled)
             if edit_mode:
@@ -371,22 +399,39 @@ def main():
 
                             # Handle image upload
                             if uploaded_image:
-                                # Save image to solutions directory
                                 img_filename = f"{q['school']}_{q['year']}_{q['paper_section']}_Q{q['question_num']}"
                                 if q.get('part_letter'):
                                     img_filename += f"_{q['part_letter']}"
                                 img_filename += f".{uploaded_image.name.split('.')[-1]}"
-                                img_path = SOLUTIONS_DIR / img_filename
+                                img_filename = img_filename.replace(" ", "_")
 
-                                with open(img_path, "wb") as f:
-                                    f.write(uploaded_image.getbuffer())
-
-                                # Add image reference to worked solution
-                                img_ref = f"[Solution Image: {img_filename}]"
-                                if new_working:
-                                    new_working = f"{new_working}\n\n{img_ref}"
+                                # Upload to Firebase Storage if available
+                                if USING_FIREBASE and upload_image_bytes:
+                                    try:
+                                        storage_path = f"images/solutions/{img_filename}"
+                                        content_type = f"image/{uploaded_image.name.split('.')[-1]}"
+                                        img_url = upload_image_bytes(
+                                            uploaded_image.getbuffer(),
+                                            storage_path,
+                                            content_type
+                                        )
+                                        # Add URL reference to worked solution
+                                        img_ref = f"[Solution URL: {img_url}]"
+                                    except Exception as e:
+                                        st.error(f"Failed to upload image: {e}")
+                                        img_ref = None
                                 else:
-                                    new_working = img_ref
+                                    # Fallback: save locally
+                                    img_path = SOLUTIONS_DIR / img_filename
+                                    with open(img_path, "wb") as f:
+                                        f.write(uploaded_image.getbuffer())
+                                    img_ref = f"[Solution Image: {img_filename}]"
+
+                                if img_ref:
+                                    if new_working:
+                                        new_working = f"{new_working}\n\n{img_ref}"
+                                    else:
+                                        new_working = img_ref
 
                             # Check what changed
                             answer_changed = new_answer != (q.get("answer") or "")

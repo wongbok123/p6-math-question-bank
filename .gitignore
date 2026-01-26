@@ -30,3 +30,5 @@ pdfs/
 # OS
 .DS_Store
 Thumbs.db
+firebase-key.json
+.streamlit/secrets.toml
