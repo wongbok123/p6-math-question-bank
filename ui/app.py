@@ -317,8 +317,8 @@ def main():
                                 st.image(str(img_path), caption="Solution", use_column_width=True)
 
                 # Show question diagram if available
-                if q.get("answer_diagram_description"):
-                    diagram_desc = q["answer_diagram_description"]
+                if q.get("question_diagram"):
+                    diagram_desc = q["question_diagram"]
                     import re
                     diag_url_match = re.search(r'\[Diagram URL: (.+?)\]', diagram_desc)
                     diag_img_match = re.search(r'\[Diagram Image: (.+?)\]', diagram_desc)
@@ -434,7 +434,7 @@ def main():
                     with col_save:
                         if st.button(f"💾 Save", key=f"save_{q['id']}"):
                             success = True
-                            new_diagram_desc = q.get("answer_diagram_description") or ""
+                            new_diagram_desc = q.get("question_diagram") or ""
 
                             # Handle solution image upload
                             if uploaded_solution:
@@ -513,7 +513,7 @@ def main():
                             # Check what changed
                             answer_changed = new_answer != (q.get("answer") or "")
                             working_changed = new_working != (q.get("worked_solution") or "")
-                            diagram_changed = new_diagram_desc != (q.get("answer_diagram_description") or "")
+                            diagram_changed = new_diagram_desc != (q.get("question_diagram") or "")
                             text_changed = new_question_text != (q.get("latex_text") or "")
                             context_changed = q.get("part_letter") and new_main_context != (q.get("main_context") or "")
                             marks_changed = new_marks != q.get("marks")
@@ -538,7 +538,7 @@ def main():
                                     question_num=new_q_num,     # Use new question num
                                     answer=new_answer,
                                     worked_solution=new_working,
-                                    answer_diagram_description=new_diagram_desc if diagram_changed else None,
+                                    question_diagram=new_diagram_desc if diagram_changed else None,
                                     part_letter=q.get('part_letter'),
                                     overwrite=True
                                 ) and success

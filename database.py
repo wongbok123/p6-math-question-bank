@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS questions (
     options TEXT,                  -- JSON for MCQ: {"A":"...", "B":"..."}
     answer TEXT,                   -- Final answer only
     worked_solution TEXT,          -- Full working steps
-    answer_diagram_description TEXT, -- For diagram-based answers
+    question_diagram TEXT, -- For diagram-based answers
     topic_tags TEXT,               -- JSON array
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(school, year, paper_section, question_num, part_letter)
@@ -78,7 +78,7 @@ def insert_question(
     options: Optional[Dict[str, str]] = None,
     answer: Optional[str] = None,
     worked_solution: Optional[str] = None,
-    answer_diagram_description: Optional[str] = None,
+    question_diagram: Optional[str] = None,
     topic_tags: Optional[List[str]] = None,
     pdf_question_num: Optional[int] = None,
     pdf_page_num: Optional[int] = None,
@@ -99,7 +99,7 @@ def insert_question(
             INSERT OR REPLACE INTO questions (
                 school, year, paper_section, question_num, part_letter, pdf_question_num, pdf_page_num,
                 marks, latex_text, main_context, diagram_description, image_path, options,
-                answer, worked_solution, answer_diagram_description, topic_tags
+                answer, worked_solution, question_diagram, topic_tags
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
@@ -118,7 +118,7 @@ def insert_question(
                 json.dumps(options) if options else None,
                 answer,
                 worked_solution,
-                answer_diagram_description,
+                question_diagram,
                 json.dumps(topic_tags) if topic_tags else None,
             ),
         )
@@ -250,7 +250,7 @@ def update_answer(
     question_num: int,
     answer: str,
     worked_solution: Optional[str] = None,
-    answer_diagram_description: Optional[str] = None,
+    question_diagram: Optional[str] = None,
     overwrite: bool = False,
     part_letter: Optional[str] = None,
 ) -> bool:
@@ -283,10 +283,10 @@ def update_answer(
         cursor = conn.execute(
             """
             UPDATE questions
-            SET answer = ?, worked_solution = ?, answer_diagram_description = ?
+            SET answer = ?, worked_solution = ?, question_diagram = ?
             WHERE school = ? AND year = ? AND paper_section = ? AND question_num = ? AND part_letter = ?
             """,
-            (answer, worked_solution, answer_diagram_description) + params_base,
+            (answer, worked_solution, question_diagram) + params_base,
         )
         return cursor.rowcount > 0
 

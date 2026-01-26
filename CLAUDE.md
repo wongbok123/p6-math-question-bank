@@ -320,7 +320,7 @@ CREATE TABLE questions (
     options TEXT,                     -- JSON for MCQ: {"A":"...", "B":"..."}
     answer TEXT,                      -- Final answer for this part
     worked_solution TEXT,             -- Step-by-step working
-    answer_diagram_description TEXT,  -- For diagram-based answers
+    question_diagram TEXT,            -- For question diagram images
     topic_tags TEXT,                  -- JSON array
     created_at TIMESTAMP,
     UNIQUE(school, year, paper_section, question_num, COALESCE(part_letter, ''))

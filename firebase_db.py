@@ -132,7 +132,7 @@ def insert_question(
     options: Optional[Dict[str, str]] = None,
     answer: Optional[str] = None,
     worked_solution: Optional[str] = None,
-    answer_diagram_description: Optional[str] = None,
+    question_diagram: Optional[str] = None,
     topic_tags: Optional[List[str]] = None,
     pdf_question_num: Optional[int] = None,
     pdf_page_num: Optional[int] = None,
@@ -164,7 +164,7 @@ def insert_question(
         'options': json.dumps(options) if options else None,
         'answer': answer,
         'worked_solution': worked_solution,
-        'answer_diagram_description': answer_diagram_description,
+        'question_diagram': question_diagram,
         'topic_tags': json.dumps(topic_tags) if topic_tags else None,
         'created_at': firestore.SERVER_TIMESTAMP,
         'updated_at': firestore.SERVER_TIMESTAMP,
@@ -283,7 +283,7 @@ def update_answer(
     question_num: int,
     answer: str,
     worked_solution: Optional[str] = None,
-    answer_diagram_description: Optional[str] = None,
+    question_diagram: Optional[str] = None,
     overwrite: bool = False,
     part_letter: Optional[str] = None,
 ) -> bool:
@@ -313,8 +313,8 @@ def update_answer(
     }
     if worked_solution is not None:
         update_data['worked_solution'] = worked_solution
-    if answer_diagram_description is not None:
-        update_data['answer_diagram_description'] = answer_diagram_description
+    if question_diagram is not None:
+        update_data['question_diagram'] = question_diagram
 
     doc_ref.update(update_data)
     return True
