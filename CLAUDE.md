@@ -50,11 +50,16 @@ python3 fix_questions.py --school "School Name" --list-page 29   # Check specifi
 python3 fix_questions.py --school "School Name" --renumber P2_0 P2_8  # Fix wrong Q#
 python3 fix_questions.py --school "School Name" --delete-page 22     # Delete bad page
 
-# 3. Re-validate until clean
+# 3. Fix P1A MCQ answers (extracts from BOOKLET A table)
+python3 fix_p1a_mcq.py --school "School Name"     # Fix specific school
+python3 fix_p1a_mcq.py                            # Fix all schools
+python3 fix_p1a_mcq.py --dry-run                  # Preview changes without applying
+
+# 4. Re-validate until clean
 python3 validate_extraction.py --school "School Name"
 
-# 4. Use UI edit mode for answer corrections
-# Password: p6math2025
+# 5. Use UI edit mode for answer corrections
+# Password: p6math2026
 ```
 
 **Common Issues Detected:**
@@ -62,6 +67,7 @@ python3 validate_extraction.py --school "School Name"
 - Invalid Q0 (wrong question number)
 - Duplicate multi-part answers (a=b)
 - Suspicious answers ("BLANK PAGE", "sorry", etc.)
+- P1A MCQ answers showing raw values like "(3) 34" instead of "C"
 
 ---
 
@@ -84,7 +90,7 @@ Build and test incrementally:
 
 #### Manual Editing Feature
 - **Password-protected edit mode** in Streamlit UI
-- Default password: `p6math2025` (change in `ui/app.py` line 100)
+- Default password: `p6math2026` (change in `ui/app.py` line 100)
 - Editable fields:
   - Answer
   - Worked solution
@@ -394,7 +400,7 @@ Example: "Red Swastika P1B Q21(b) should be 30, not 11/12"
 - **Cannot** run extraction (no API key on cloud)
 
 ### Edit Mode on Cloud
-- Password: `p6math2025`
+- Password: `p6math2026`
 - **Warning**: Edits on Streamlit Cloud are temporary (reset on redeploy)
 - For permanent edits, modify locally and push to GitHub
 

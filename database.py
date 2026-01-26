@@ -192,7 +192,15 @@ def get_questions(
         query += " AND topic_tags LIKE ?"
         params.append(f"%{topic_tag}%")
 
-    query += " ORDER BY school, year, paper_section, question_num, COALESCE(part_letter, '')"
+    # Sort by school, year, then section ASCENDING (P1A→P1B→P2), then question number
+    query += """ ORDER BY school, year,
+        CASE paper_section
+            WHEN 'P1A' THEN 1
+            WHEN 'P1B' THEN 2
+            WHEN 'P2' THEN 3
+            ELSE 4
+        END,
+        question_num, COALESCE(part_letter, '')"""
 
     with get_connection() as conn:
         rows = conn.execute(query, params).fetchall()
@@ -310,6 +318,50 @@ def update_question_text(
             """,
             (latex_text, main_context, school, year, paper_section, question_num, part),
         )
+        return cursor.rowcount > 0
+
+
+def update_question_metadata(
+    question_id: int,
+    marks: Optional[int] = None,
+    question_num: Optional[int] = None,
+    paper_section: Optional[str] = None,
+    pdf_question_num: Optional[int] = None,
+) -> bool:
+    """Update question metadata (marks, question_num, paper_section).
+
+    Args:
+        question_id: The database ID of the question
+        marks: New marks value (optional)
+        question_num: New question number (optional)
+        paper_section: New paper section P1A/P1B/P2 (optional)
+        pdf_question_num: New PDF question number for display (optional)
+    """
+    with get_connection() as conn:
+        # Build dynamic update query
+        updates = []
+        params = []
+
+        if marks is not None:
+            updates.append("marks = ?")
+            params.append(marks)
+        if question_num is not None:
+            updates.append("question_num = ?")
+            params.append(question_num)
+        if paper_section is not None:
+            updates.append("paper_section = ?")
+            params.append(paper_section)
+        if pdf_question_num is not None:
+            updates.append("pdf_question_num = ?")
+            params.append(pdf_question_num)
+
+        if not updates:
+            return False
+
+        params.append(question_id)
+        query = f"UPDATE questions SET {', '.join(updates)} WHERE id = ?"
+
+        cursor = conn.execute(query, params)
         return cursor.rowcount > 0
 
 

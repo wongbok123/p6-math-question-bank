@@ -503,6 +503,12 @@ def process_pdf(
                                 # Store original PDF question number for display purposes
                                 pdf_q_num = q.number
 
+                                # VALIDATION: P1A (MCQ) should only have Q1-Q15
+                                # If detected as MCQ but Q# > 15, it's actually P1B
+                                if paper_section == "P1A" and q.number > 15:
+                                    paper_section = "P1B"
+                                    print(f"    [AUTO-FIX] Q{q.number} moved from P1A to P1B (Q# > 15)")
+
                                 # Adjust question numbers for P1B storage
                                 # PDF shows Q16-30 (continuing from P1A), but P1B should be stored as Q1-15
                                 actual_q_num = q.number

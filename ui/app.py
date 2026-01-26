@@ -18,7 +18,12 @@ from database import (
     init_db,
     update_answer,
     update_question_text,
+    update_question_metadata,
 )
+
+# Directory for uploaded solution images
+SOLUTIONS_DIR = Path(__file__).parent.parent / "output" / "images" / "solutions"
+SOLUTIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def main():
@@ -97,7 +102,7 @@ def main():
 
         # Edit mode with password protection
         st.header("Edit Mode")
-        EDIT_PASSWORD = "p6math2025"  # Change this to your desired password
+        EDIT_PASSWORD = "p6math2026"  # Change this to your desired password
 
         # Initialize session state for edit mode
         if "edit_mode_unlocked" not in st.session_state:
@@ -252,9 +257,66 @@ def main():
             if show_answers and q.get("answer"):
                 st.success(f"**Answer:** {q['answer']}")
 
+                # Show worked solution if available
+                if q.get("worked_solution"):
+                    worked = q["worked_solution"]
+                    # Check if there's a solution image reference
+                    import re
+                    img_match = re.search(r'\[Solution Image: (.+?)\]', worked)
+                    if img_match:
+                        img_filename = img_match.group(1)
+                        img_path = SOLUTIONS_DIR / img_filename
+                        if img_path.exists():
+                            with st.expander("View Worked Solution"):
+                                # Show text part (without image reference)
+                                text_part = re.sub(r'\[Solution Image: .+?\]', '', worked).strip()
+                                if text_part:
+                                    st.markdown(text_part)
+                                st.image(str(img_path), caption="Solution", use_column_width=True)
+                        else:
+                            with st.expander("View Worked Solution"):
+                                st.markdown(worked)
+                    else:
+                        with st.expander("View Worked Solution"):
+                            st.markdown(worked)
+
             # Edit section (only shown when edit mode is enabled)
             if edit_mode:
                 with st.expander(f"✏️ Edit Q{display_num}"):
+                    # Metadata editing (marks, question num, paper section)
+                    st.markdown("**Question Metadata**")
+                    meta_col1, meta_col2, meta_col3 = st.columns(3)
+
+                    with meta_col1:
+                        new_marks = st.number_input(
+                            "Marks",
+                            min_value=1,
+                            max_value=10,
+                            value=q.get("marks") or 1,
+                            key=f"marks_{q['id']}"
+                        )
+
+                    with meta_col2:
+                        new_q_num = st.number_input(
+                            "Question Number",
+                            min_value=1,
+                            max_value=30,
+                            value=q.get("question_num") or 1,
+                            key=f"qnum_{q['id']}"
+                        )
+
+                    with meta_col3:
+                        section_options = ["P1A", "P1B", "P2"]
+                        current_section_idx = section_options.index(q['paper_section']) if q['paper_section'] in section_options else 0
+                        new_section = st.selectbox(
+                            "Paper Section",
+                            section_options,
+                            index=current_section_idx,
+                            key=f"section_{q['id']}"
+                        )
+
+                    st.markdown("**Answer & Solution**")
+
                     # Answer editing
                     new_answer = st.text_input(
                         "Answer",
@@ -264,11 +326,24 @@ def main():
 
                     # Working solution editing
                     new_working = st.text_area(
-                        "Worked Solution",
+                        "Worked Solution (text)",
                         value=q.get("worked_solution") or "",
                         height=150,
                         key=f"working_{q['id']}"
                     )
+
+                    # Image upload for worked solution
+                    st.markdown("**Or upload solution image:**")
+                    uploaded_image = st.file_uploader(
+                        "Upload solution image",
+                        type=["png", "jpg", "jpeg"],
+                        key=f"upload_{q['id']}"
+                    )
+
+                    if uploaded_image:
+                        st.image(uploaded_image, caption="Preview", width=300)
+
+                    st.markdown("**Question Text**")
 
                     # Question text editing
                     new_question_text = st.text_area(
@@ -292,20 +367,52 @@ def main():
                     col_save, col_status = st.columns([1, 2])
                     with col_save:
                         if st.button(f"💾 Save", key=f"save_{q['id']}"):
-                            # Update answer if changed
+                            success = True
+
+                            # Handle image upload
+                            if uploaded_image:
+                                # Save image to solutions directory
+                                img_filename = f"{q['school']}_{q['year']}_{q['paper_section']}_Q{q['question_num']}"
+                                if q.get('part_letter'):
+                                    img_filename += f"_{q['part_letter']}"
+                                img_filename += f".{uploaded_image.name.split('.')[-1]}"
+                                img_path = SOLUTIONS_DIR / img_filename
+
+                                with open(img_path, "wb") as f:
+                                    f.write(uploaded_image.getbuffer())
+
+                                # Add image reference to worked solution
+                                img_ref = f"[Solution Image: {img_filename}]"
+                                if new_working:
+                                    new_working = f"{new_working}\n\n{img_ref}"
+                                else:
+                                    new_working = img_ref
+
+                            # Check what changed
                             answer_changed = new_answer != (q.get("answer") or "")
                             working_changed = new_working != (q.get("worked_solution") or "")
                             text_changed = new_question_text != (q.get("latex_text") or "")
                             context_changed = q.get("part_letter") and new_main_context != (q.get("main_context") or "")
+                            marks_changed = new_marks != q.get("marks")
+                            qnum_changed = new_q_num != q.get("question_num")
+                            section_changed = new_section != q.get("paper_section")
 
-                            success = True
+                            # Update metadata if changed
+                            if marks_changed or qnum_changed or section_changed:
+                                success = update_question_metadata(
+                                    question_id=q['id'],
+                                    marks=new_marks if marks_changed else None,
+                                    question_num=new_q_num if qnum_changed else None,
+                                    paper_section=new_section if section_changed else None,
+                                    pdf_question_num=new_q_num if qnum_changed else None,
+                                ) and success
 
                             if answer_changed or working_changed:
                                 success = update_answer(
                                     school=q['school'],
                                     year=q['year'],
-                                    paper_section=q['paper_section'],
-                                    question_num=q['question_num'],
+                                    paper_section=new_section,  # Use new section
+                                    question_num=new_q_num,     # Use new question num
                                     answer=new_answer,
                                     worked_solution=new_working,
                                     part_letter=q.get('part_letter'),
@@ -316,8 +423,8 @@ def main():
                                 success = update_question_text(
                                     school=q['school'],
                                     year=q['year'],
-                                    paper_section=q['paper_section'],
-                                    question_num=q['question_num'],
+                                    paper_section=new_section,  # Use new section
+                                    question_num=new_q_num,     # Use new question num
                                     latex_text=new_question_text,
                                     main_context=new_main_context if q.get("part_letter") else None,
                                     part_letter=q.get('part_letter')
