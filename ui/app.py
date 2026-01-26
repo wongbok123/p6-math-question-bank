@@ -316,21 +316,21 @@ def main():
                             if img_path.exists():
                                 st.image(str(img_path), caption="Solution", use_column_width=True)
 
-                # Show answer diagram if available
+                # Show question diagram if available
                 if q.get("answer_diagram_description"):
                     diagram_desc = q["answer_diagram_description"]
                     import re
                     diag_url_match = re.search(r'\[Diagram URL: (.+?)\]', diagram_desc)
                     diag_img_match = re.search(r'\[Diagram Image: (.+?)\]', diagram_desc)
 
-                    with st.expander("View Answer Diagram"):
+                    with st.expander("View Question Diagram"):
                         if diag_url_match:
-                            st.image(diag_url_match.group(1), caption="Answer Diagram", use_column_width=True)
+                            st.image(diag_url_match.group(1), caption="Question Diagram", use_column_width=True)
                         elif diag_img_match:
                             diag_filename = diag_img_match.group(1)
                             diag_path = SOLUTIONS_DIR / diag_filename
                             if diag_path.exists():
-                                st.image(str(diag_path), caption="Answer Diagram", use_column_width=True)
+                                st.image(str(diag_path), caption="Question Diagram", use_column_width=True)
                         else:
                             # Plain text description
                             st.markdown(diagram_desc)
@@ -398,10 +398,10 @@ def main():
                     if uploaded_solution:
                         st.image(uploaded_solution, caption="Solution Preview", width=300)
 
-                    # Image upload for answer diagram
-                    st.markdown("**Or upload answer diagram:**")
+                    # Image upload for question diagram
+                    st.markdown("**Or upload question diagram:**")
                     uploaded_diagram = st.file_uploader(
-                        "Upload answer diagram",
+                        "Upload question diagram",
                         type=["png", "jpg", "jpeg"],
                         key=f"upload_diagram_{q['id']}"
                     )
