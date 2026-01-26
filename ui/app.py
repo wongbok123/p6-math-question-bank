@@ -245,18 +245,26 @@ def main():
 
             with col_img:
                 # Display question image
-                # Handle both absolute paths (local) and relative paths (cloud)
-                image_path = Path(q["image_path"])
-                if image_path.exists():
-                    st.image(str(image_path), use_column_width=True)
+                image_path_str = q.get("image_path", "")
+
+                # Check if it's a URL (Firebase Storage)
+                if image_path_str.startswith("http"):
+                    st.image(image_path_str, use_column_width=True)
                 else:
-                    # Try relative path from project root (for Streamlit Cloud)
-                    filename = image_path.name
-                    relative_path = Path(__file__).parent.parent / "output" / "images" / filename
-                    if relative_path.exists():
-                        st.image(str(relative_path), use_column_width=True)
+                    # Handle local paths
+                    image_path = Path(image_path_str) if image_path_str else None
+
+                    if image_path and image_path.exists():
+                        st.image(str(image_path), use_column_width=True)
                     else:
-                        st.warning("Image not found")
+                        # Try relative path from project root
+                        if image_path:
+                            filename = image_path.name
+                            relative_path = Path(__file__).parent.parent / "output" / "images" / filename
+                            if relative_path.exists():
+                                st.image(str(relative_path), use_column_width=True)
+                            else:
+                                st.info("📷 Image not available on cloud")
 
             with col_text:
                 # LaTeX text - show main context first if available
@@ -406,6 +414,7 @@ def main():
                                 img_filename = img_filename.replace(" ", "_")
 
                                 # Upload to Firebase Storage if available
+                                img_ref = None
                                 if USING_FIREBASE and upload_image_bytes:
                                     try:
                                         storage_path = f"images/solutions/{img_filename}"
@@ -417,11 +426,16 @@ def main():
                                         )
                                         # Add URL reference to worked solution
                                         img_ref = f"[Solution URL: {img_url}]"
+                                        st.success(f"Image uploaded to cloud storage")
                                     except Exception as e:
-                                        st.error(f"Failed to upload image: {e}")
-                                        img_ref = None
+                                        st.warning(f"Cloud upload failed: {e}. Saving locally...")
+                                        # Fallback to local
+                                        img_path = SOLUTIONS_DIR / img_filename
+                                        with open(img_path, "wb") as f:
+                                            f.write(uploaded_image.getbuffer())
+                                        img_ref = f"[Solution Image: {img_filename}]"
                                 else:
-                                    # Fallback: save locally
+                                    # Save locally
                                     img_path = SOLUTIONS_DIR / img_filename
                                     with open(img_path, "wb") as f:
                                         f.write(uploaded_image.getbuffer())
