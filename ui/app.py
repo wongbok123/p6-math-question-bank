@@ -316,6 +316,25 @@ def main():
                             if img_path.exists():
                                 st.image(str(img_path), caption="Solution", use_column_width=True)
 
+                # Show answer diagram if available
+                if q.get("answer_diagram_description"):
+                    diagram_desc = q["answer_diagram_description"]
+                    import re
+                    diag_url_match = re.search(r'\[Diagram URL: (.+?)\]', diagram_desc)
+                    diag_img_match = re.search(r'\[Diagram Image: (.+?)\]', diagram_desc)
+
+                    with st.expander("View Answer Diagram"):
+                        if diag_url_match:
+                            st.image(diag_url_match.group(1), caption="Answer Diagram", use_column_width=True)
+                        elif diag_img_match:
+                            diag_filename = diag_img_match.group(1)
+                            diag_path = SOLUTIONS_DIR / diag_filename
+                            if diag_path.exists():
+                                st.image(str(diag_path), caption="Answer Diagram", use_column_width=True)
+                        else:
+                            # Plain text description
+                            st.markdown(diagram_desc)
+
             # Edit section (only shown when edit mode is enabled)
             if edit_mode:
                 with st.expander(f"✏️ Edit Q{display_num}"):
@@ -370,14 +389,25 @@ def main():
 
                     # Image upload for worked solution
                     st.markdown("**Or upload solution image:**")
-                    uploaded_image = st.file_uploader(
+                    uploaded_solution = st.file_uploader(
                         "Upload solution image",
                         type=["png", "jpg", "jpeg"],
-                        key=f"upload_{q['id']}"
+                        key=f"upload_solution_{q['id']}"
                     )
 
-                    if uploaded_image:
-                        st.image(uploaded_image, caption="Preview", width=300)
+                    if uploaded_solution:
+                        st.image(uploaded_solution, caption="Solution Preview", width=300)
+
+                    # Image upload for answer diagram
+                    st.markdown("**Or upload answer diagram:**")
+                    uploaded_diagram = st.file_uploader(
+                        "Upload answer diagram",
+                        type=["png", "jpg", "jpeg"],
+                        key=f"upload_diagram_{q['id']}"
+                    )
+
+                    if uploaded_diagram:
+                        st.image(uploaded_diagram, caption="Diagram Preview", width=300)
 
                     st.markdown("**Question Text**")
 
@@ -404,42 +434,37 @@ def main():
                     with col_save:
                         if st.button(f"💾 Save", key=f"save_{q['id']}"):
                             success = True
+                            new_diagram_desc = q.get("answer_diagram_description") or ""
 
-                            # Handle image upload
-                            if uploaded_image:
+                            # Handle solution image upload
+                            if uploaded_solution:
                                 img_filename = f"{q['school']}_{q['year']}_{q['paper_section']}_Q{q['question_num']}"
                                 if q.get('part_letter'):
                                     img_filename += f"_{q['part_letter']}"
-                                img_filename += f".{uploaded_image.name.split('.')[-1]}"
+                                img_filename += f"_solution.{uploaded_solution.name.split('.')[-1]}"
                                 img_filename = img_filename.replace(" ", "_")
 
-                                # Upload to Firebase Storage if available
-                                img_ref = None
-                                # Get image bytes (getvalue() returns bytes directly)
-                                img_bytes = uploaded_image.getvalue()
+                                img_bytes = uploaded_solution.getvalue()
 
                                 if USING_FIREBASE and upload_image_bytes:
                                     try:
                                         storage_path = f"images/solutions/{img_filename}"
-                                        ext = uploaded_image.name.split('.')[-1].lower()
+                                        ext = uploaded_solution.name.split('.')[-1].lower()
                                         content_type = f"image/{ext if ext != 'jpg' else 'jpeg'}"
                                         img_url = upload_image_bytes(
                                             img_bytes,
                                             storage_path,
                                             content_type
                                         )
-                                        # Add URL reference to worked solution
                                         img_ref = f"[Solution URL: {img_url}]"
-                                        st.success(f"Image uploaded to cloud storage")
+                                        st.success(f"Solution image uploaded to cloud")
                                     except Exception as e:
                                         st.warning(f"Cloud upload failed: {e}. Saving locally...")
-                                        # Fallback to local
                                         img_path = SOLUTIONS_DIR / img_filename
                                         with open(img_path, "wb") as f:
                                             f.write(img_bytes)
                                         img_ref = f"[Solution Image: {img_filename}]"
                                 else:
-                                    # Save locally
                                     img_path = SOLUTIONS_DIR / img_filename
                                     with open(img_path, "wb") as f:
                                         f.write(img_bytes)
@@ -451,9 +476,44 @@ def main():
                                     else:
                                         new_working = img_ref
 
+                            # Handle diagram image upload
+                            if uploaded_diagram:
+                                diag_filename = f"{q['school']}_{q['year']}_{q['paper_section']}_Q{q['question_num']}"
+                                if q.get('part_letter'):
+                                    diag_filename += f"_{q['part_letter']}"
+                                diag_filename += f"_diagram.{uploaded_diagram.name.split('.')[-1]}"
+                                diag_filename = diag_filename.replace(" ", "_")
+
+                                diag_bytes = uploaded_diagram.getvalue()
+
+                                if USING_FIREBASE and upload_image_bytes:
+                                    try:
+                                        storage_path = f"images/diagrams/{diag_filename}"
+                                        ext = uploaded_diagram.name.split('.')[-1].lower()
+                                        content_type = f"image/{ext if ext != 'jpg' else 'jpeg'}"
+                                        diag_url = upload_image_bytes(
+                                            diag_bytes,
+                                            storage_path,
+                                            content_type
+                                        )
+                                        new_diagram_desc = f"[Diagram URL: {diag_url}]"
+                                        st.success(f"Diagram image uploaded to cloud")
+                                    except Exception as e:
+                                        st.warning(f"Diagram upload failed: {e}. Saving locally...")
+                                        diag_path = SOLUTIONS_DIR / diag_filename
+                                        with open(diag_path, "wb") as f:
+                                            f.write(diag_bytes)
+                                        new_diagram_desc = f"[Diagram Image: {diag_filename}]"
+                                else:
+                                    diag_path = SOLUTIONS_DIR / diag_filename
+                                    with open(diag_path, "wb") as f:
+                                        f.write(diag_bytes)
+                                    new_diagram_desc = f"[Diagram Image: {diag_filename}]"
+
                             # Check what changed
                             answer_changed = new_answer != (q.get("answer") or "")
                             working_changed = new_working != (q.get("worked_solution") or "")
+                            diagram_changed = new_diagram_desc != (q.get("answer_diagram_description") or "")
                             text_changed = new_question_text != (q.get("latex_text") or "")
                             context_changed = q.get("part_letter") and new_main_context != (q.get("main_context") or "")
                             marks_changed = new_marks != q.get("marks")
@@ -470,7 +530,7 @@ def main():
                                     pdf_question_num=new_q_num if qnum_changed else None,
                                 ) and success
 
-                            if answer_changed or working_changed:
+                            if answer_changed or working_changed or diagram_changed:
                                 success = update_answer(
                                     school=q['school'],
                                     year=q['year'],
@@ -478,6 +538,7 @@ def main():
                                     question_num=new_q_num,     # Use new question num
                                     answer=new_answer,
                                     worked_solution=new_working,
+                                    answer_diagram_description=new_diagram_desc if diagram_changed else None,
                                     part_letter=q.get('part_letter'),
                                     overwrite=True
                                 ) and success
