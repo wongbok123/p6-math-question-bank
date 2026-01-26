@@ -415,12 +415,16 @@ def main():
 
                                 # Upload to Firebase Storage if available
                                 img_ref = None
+                                # Get image bytes (getvalue() returns bytes directly)
+                                img_bytes = uploaded_image.getvalue()
+
                                 if USING_FIREBASE and upload_image_bytes:
                                     try:
                                         storage_path = f"images/solutions/{img_filename}"
-                                        content_type = f"image/{uploaded_image.name.split('.')[-1]}"
+                                        ext = uploaded_image.name.split('.')[-1].lower()
+                                        content_type = f"image/{ext if ext != 'jpg' else 'jpeg'}"
                                         img_url = upload_image_bytes(
-                                            uploaded_image.getbuffer(),
+                                            img_bytes,
                                             storage_path,
                                             content_type
                                         )
@@ -432,13 +436,13 @@ def main():
                                         # Fallback to local
                                         img_path = SOLUTIONS_DIR / img_filename
                                         with open(img_path, "wb") as f:
-                                            f.write(uploaded_image.getbuffer())
+                                            f.write(img_bytes)
                                         img_ref = f"[Solution Image: {img_filename}]"
                                 else:
                                     # Save locally
                                     img_path = SOLUTIONS_DIR / img_filename
                                     with open(img_path, "wb") as f:
-                                        f.write(uploaded_image.getbuffer())
+                                        f.write(img_bytes)
                                     img_ref = f"[Solution Image: {img_filename}]"
 
                                 if img_ref:

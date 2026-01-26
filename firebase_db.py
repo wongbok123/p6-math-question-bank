@@ -428,7 +428,7 @@ def upload_image_bytes(image_bytes, storage_path: str, content_type: str = 'imag
     Upload image bytes to Firebase Storage.
 
     Args:
-        image_bytes: Image data as bytes or memoryview
+        image_bytes: Image data as bytes, memoryview, or BytesIO
         storage_path: Path in Firebase Storage
         content_type: MIME type of the image
 
@@ -437,9 +437,18 @@ def upload_image_bytes(image_bytes, storage_path: str, content_type: str = 'imag
     """
     bucket = get_bucket()
     blob = bucket.blob(storage_path)
-    # Convert memoryview to bytes if needed
-    if isinstance(image_bytes, memoryview):
+
+    # Convert to bytes if needed
+    if hasattr(image_bytes, 'tobytes'):
+        # memoryview
+        image_bytes = image_bytes.tobytes()
+    elif hasattr(image_bytes, 'read'):
+        # file-like object (BytesIO)
+        image_bytes = image_bytes.read()
+    elif not isinstance(image_bytes, bytes):
+        # Try direct conversion as last resort
         image_bytes = bytes(image_bytes)
+
     blob.upload_from_string(image_bytes, content_type=content_type)
     blob.make_public()
     return blob.public_url
