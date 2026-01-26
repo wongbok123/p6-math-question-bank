@@ -15,88 +15,93 @@
 - [x] **Multi-Part Splitting**: Q6(a), Q6(b) stored as separate entries (v0.5)
 - [x] **Manual Editing**: Password-protected UI editing (v0.6)
 - [x] **P1B Multi-Part Fix**: Fixed P1B part (b) answer extraction (v0.6)
+- [x] **Firebase Migration**: Cloud database + storage for persistent edits (v0.7)
 - [ ] **Topic Tagging**: Tag questions by topic, type, heuristics (Phase 2)
+- [ ] **Historical Data**: Extract 2023 and 2024 papers (Phase 3)
 
 ---
 
-## Next Steps (TODO)
+## Current Status
 
-### Immediate Testing (Current Session)
-1. **Test P1B Part (b) Fix**
-   - Re-run `verify_and_solve.py` on one exam paper with P1B multi-part questions
-   - Check that Q21(a) and Q21(b) have DIFFERENT answers
-   - Check that Q25(a) and Q25(b) have DIFFERENT answers
-   - Verify in UI that both parts display correctly
+### 2025 Papers: Complete (624 questions)
+- **13 schools** extracted and stored in Firebase
+- **Manual QA in progress** - reviewers checking answers via UI
+- **Edit mode available** - corrections saved to Firebase
 
-2. **Validate on 2 More Test Papers**
-   - Run full pipeline on 2 additional school papers
-   - Confirm P1B multi-part extraction works across different formats
-   - Document any edge cases
+### Next Phase: Topic Tagging (In Development)
+While manual QA continues, develop topic labeling system:
 
-3. **Then Process All Papers**
-   - Once validated, run on remaining exam papers
+1. **Design Topic Taxonomy**
+   - Primary topics: Whole Numbers, Fractions, Decimals, Percentage, Ratio, Rate, Algebra, Geometry, Area/Perimeter, Volume, Data Analysis
+   - Question types: Word Problem, Computation, Diagram-based, Multi-step
+   - Heuristics: Before-After, Units & Parts, Model Drawing, Working Backwards, etc.
 
-### Quality Assurance Workflow
+2. **Implementation Approach**
+   - Use Gemini to auto-tag questions based on question text + image
+   - Store tags in `topic_tags` field (JSON array)
+   - Add UI filters for topic-based browsing
 
-After extracting any paper, run the validation:
+3. **Validation**
+   - Test on subset of questions
+   - Compare AI tags with manual labels
+   - Refine prompts for accuracy
+
+### Future Phase: 2023/2024 Extraction
+After topic tagging is stable:
+- Extract 2023 prelim papers
+- Extract 2024 prelim papers
+- Apply same pipeline + topic tagging
+
+---
+
+## Quality Assurance Workflow
+
+After extracting any paper:
 
 ```bash
 # 1. Validate extraction
 python3 validate_extraction.py --school "School Name"
 
 # 2. Fix issues found
-python3 fix_questions.py --school "School Name" --summary        # View summary
-python3 fix_questions.py --school "School Name" --list-page 29   # Check specific page
-python3 fix_questions.py --school "School Name" --renumber P2_0 P2_8  # Fix wrong Q#
-python3 fix_questions.py --school "School Name" --delete-page 22     # Delete bad page
+python3 fix_questions.py --school "School Name" --summary
+python3 fix_questions.py --school "School Name" --renumber P2_0 P2_8
 
-# 3. Fix P1A MCQ answers (extracts from BOOKLET A table)
-python3 fix_p1a_mcq.py --school "School Name"     # Fix specific school
-python3 fix_p1a_mcq.py                            # Fix all schools
-python3 fix_p1a_mcq.py --dry-run                  # Preview changes without applying
-
-# 4. Re-validate until clean
-python3 validate_extraction.py --school "School Name"
-
-# 5. Use UI edit mode for answer corrections
+# 3. Use UI edit mode for manual corrections
+# URL: [Streamlit Cloud URL]
 # Password: p6math2026
 ```
 
-**Common Issues Detected:**
+**Common Issues:**
 - Missing questions (gaps in Q# sequence)
 - Invalid Q0 (wrong question number)
 - Duplicate multi-part answers (a=b)
 - Suspicious answers ("BLANK PAGE", "sorry", etc.)
-- P1A MCQ answers showing raw values like "(3) 34" instead of "C"
 
 ---
 
-### Phase 2: Topic Tagging (Future)
-Build and test incrementally:
-1. **Step 1**: Implement tagging on 1 exam paper
-   - Design tag categories (topics, question types, difficulty)
-   - Create Gemini prompt for auto-tagging
-   - Add tags to database schema
-2. **Step 2**: Test on 2 more papers
-   - Validate tag consistency
-   - Refine prompts based on results
-3. **Step 3**: Apply to all papers
-   - Batch process all existing questions
-   - Add tag filters to UI
+### Recent Fixes (v0.7) - January 2025
+
+#### Firebase Migration
+- **Cloud database**: All questions now stored in Firebase Firestore
+- **Cloud storage**: All images stored in Firebase Storage with public URLs
+- **Persistent edits**: Changes made in UI persist across redeployments
+- **Upload features**: Solution images and answer diagrams can be uploaded
+
+#### Enhanced UI Editing
+- Upload solution images (stored in Firebase Storage)
+- Upload answer diagram images
+- Edit marks, question number, paper section
+- All changes sync to Firebase immediately
 
 ---
 
-### Recent Fixes (v0.6) - January 2025
+### Previous Fixes (v0.6) - January 2025
 
 #### Manual Editing Feature
 - **Password-protected edit mode** in Streamlit UI
-- Default password: `p6math2026` (change in `ui/app.py` line 100)
-- Editable fields:
-  - Answer
-  - Worked solution
-  - Question text
-  - Main context (for multi-part questions)
-- Changes persist to database immediately
+- Default password: `p6math2026`
+- Editable fields: Answer, Worked solution, Question text, Main context
+- Changes persist to Firebase
 
 #### P1B Multi-Part Answer Extraction Fix
 - **Problem**: P1B questions like Q21(a), Q21(b) only extracted part (a) answer
@@ -333,24 +338,31 @@ P6 Bank/
 ├── solve_questions.py    # Direct AI solver for questions
 ├── parse_answers.py      # Legacy: simple Q# matching (kept for reference)
 ├── segmenter.py          # OpenCV question region detection
-├── database.py           # SQLite operations
+├── database.py           # SQLite operations (local development)
+├── firebase_db.py        # Firebase Firestore + Storage operations
 ├── config.py             # Paths and settings
 ├── requirements.txt      # Python dependencies
 ├── .env                  # GEMINI_API_KEY (not committed)
+├── firebase-key.json     # Firebase credentials (not committed)
+├── scripts/              # One-time migration/fix scripts
+│   ├── fix_p1a_mcq.py        # Fix P1A MCQ answers
+│   ├── migrate_to_firebase.py # SQLite to Firebase migration
+│   └── update_image_paths.py  # Update image paths to URLs
 ├── utils/
 │   └── gemini_client.py  # Gemini API client + prompts
 ├── ui/
 │   └── app.py            # Streamlit viewer with edit mode
 ├── pdfs/                 # Input PDFs (not committed)
-├── output/               # Generated data (not committed)
-│   ├── p6_questions.db   # SQLite database
+├── output/               # Local data (images backed up to Firebase)
+│   ├── p6_questions.db   # SQLite database (local backup)
 │   └── images/           # Extracted page images
-│       └── answer_keys/  # Answer key page images
 └── CLAUDE.md             # This file
 ```
 
-**Note**: `pdfs/` is in `.gitignore` (source files not needed for viewing).
-`output/` is committed to GitHub for Streamlit Cloud deployment.
+**Storage:**
+- **Questions**: Firebase Firestore (cloud)
+- **Images**: Firebase Storage (cloud URLs)
+- **Local backup**: SQLite + local images (optional)
 
 ---
 
