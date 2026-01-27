@@ -16,6 +16,15 @@ from config import (
     TOPICS, HEURISTICS,
 )
 
+# Display label overrides for topics (canonical name → UI label)
+TOPIC_DISPLAY = {
+    "Speed": "Speed (not in PSLE from 2026)",
+}
+
+def _topic_label(name: str) -> str:
+    """Return display label for a topic name."""
+    return TOPIC_DISPLAY.get(name, name)
+
 # Use Firebase if available, fallback to SQLite
 USE_FIREBASE = os.environ.get('USE_FIREBASE', 'true').lower() == 'true'
 
@@ -169,7 +178,7 @@ def main():
         # Topic filters
         st.header("Topic Filters")
 
-        selected_topics = st.multiselect("Topics", options=TOPICS, default=[])
+        selected_topics = st.multiselect("Topics", options=TOPICS, default=[], format_func=_topic_label)
         selected_heuristics = st.multiselect("Heuristics", options=HEURISTICS, default=[])
 
         show_needs_review = st.checkbox("Show Only Needs Review", value=False)
@@ -430,7 +439,7 @@ def main():
             # Topic tag pills
             tag_pills = []
             for t in (q.get('topics') or []):
-                tag_pills.append(f'<span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:12px;font-size:0.8em;margin-right:4px;">{t}</span>')
+                tag_pills.append(f'<span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:12px;font-size:0.8em;margin-right:4px;">{_topic_label(t)}</span>')
             for h in (q.get('heuristics') or []):
                 tag_pills.append(f'<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:12px;font-size:0.8em;margin-right:4px;">{h}</span>')
             if tag_pills:
@@ -535,7 +544,8 @@ def main():
                         "Topics",
                         options=TOPICS,
                         default=q.get("topics") or [],
-                        key=f"topics_{q['id']}"
+                        key=f"topics_{q['id']}",
+                        format_func=_topic_label,
                     )
                     new_heuristics = st.multiselect(
                         "Heuristics",
