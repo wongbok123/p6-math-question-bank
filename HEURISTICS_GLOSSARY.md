@@ -7,20 +7,6 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 
 ---
 
-## All Items Changed
-
-**What it is:** All quantities in a before-after problem change by different amounts. You cannot hold anything constant, so you must set up a working table tracking each quantity's before and after values to find new relationships.
-
-**When to tag:** The question describes a change where every quantity changes (e.g., "Ali gave 20 to Ben and Ben gave 10 to Charlie"), and no single quantity stays the same.
-
-**Example:**
-> Ali, Ben, and Charlie had money in the ratio 2:3:5. After Ali gave $40 to Ben and Ben gave $20 to Charlie, they had equal amounts. How much did they have altogether?
->
-> Before: 2u, 3u, 5u. After: 2u−40, 3u+40−20, 5u+20. All equal.
-> 2u − 40 = 3u + 20 → solve for u. Total = 10u.
-
----
-
 ## Before-After
 
 **What it is:** Comparing quantities before and after a change (someone gives away, receives, transfers, etc.) to find an unknown.
@@ -32,6 +18,28 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 >
 > **Before:** Ali = ?, Ben = 25
 > **After:** Ali gives 15 to Ben. Ali = 3 x Ben's new amount.
+
+### Sub-type: One Item Unchanged
+
+In a before-after ratio problem, one quantity does not change. Make that item's units the same in both the before and after ratios to solve.
+
+**Example:**
+> The ratio of Ali's money to Ben's money was 5:4. After Ali spent $60, the ratio became 5:8. How much money did Ben have?
+>
+> Ben's money is unchanged. Before: A:B = 5:4. After: A:B = 5:8.
+> Make Ben's units the same: Before = 5:4 = 10:8. After = 5:8.
+> Ali's change: 10 units → 5 units = 5 units = $60. 1 unit = $12.
+> Ben = 8 units = **$96**
+
+### Sub-type: All Items Changed
+
+All quantities in a before-after problem change by different amounts. You cannot hold anything constant, so you must set up a working table tracking each quantity's before and after values to find new relationships.
+
+**Example:**
+> Ali, Ben, and Charlie had money in the ratio 2:3:5. After Ali gave $40 to Ben and Ben gave $20 to Charlie, they had equal amounts. How much did they have altogether?
+>
+> Before: 2u, 3u, 5u. After: 2u−40, 3u+40−20, 5u+20. All equal.
+> 2u − 40 = 3u + 20 → solve for u. Total = 10u.
 
 ---
 
@@ -51,22 +59,45 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 
 ## Branching
 
-**What it is:** Using tree diagrams or systematic branching to count possibilities or track outcomes. Common in probability and combinatorics.
+**What it is:** Using tree diagrams or systematic branching to count possibilities, track outcomes, or process sequential steps. Common in probability, combinatorics, and remainder problems.
 
-**When to tag:** The problem involves counting arrangements, combinations, or probability paths.
+**When to tag:** The problem involves counting arrangements, combinations, probability paths, sequential fraction-of-remainder steps, or systematic enumeration.
 
 **Example:**
 > A coin is tossed 3 times. How many possible outcomes are there?
 >
 > Branch: each toss has 2 outcomes. Total = 2 x 2 x 2 = **8**
 
+### Sub-type: Remainder Concept
+
+Problems where a fraction of a quantity is used, then a fraction of the *remainder* is used, and so on. Requires tracking what's left at each step — naturally forms a branching chain.
+
+**Example:**
+> Ali had $120. He spent 1/3 of it on a book. He then spent 1/4 of the remainder on food. How much did he have left?
+>
+> Spent on book: 1/3 x 120 = $40. Remainder = $80.
+> Spent on food: 1/4 x 80 = $20. Left = **$60**
+
+### Sub-type: Make a List / Table
+
+Organising data into a structured list or table to find a pattern or ensure all cases are covered — a form of systematic enumeration.
+
+**Example:**
+> How many 3-digit numbers can be formed using the digits 1, 2, 3 without repetition?
+>
+> List: 123, 132, 213, 231, 312, 321 = **6 numbers**
+
 ---
 
-## Constant Difference
+## Constant Quantity
 
-**What it is:** Two quantities change (e.g., both increase or decrease), but the *difference* between them stays the same. Applies to ages, transfers where both sides change equally, and geometry problems where overlapping areas maintain a constant difference.
+**What it is:** An invariant quantity persists through a change. Either the *difference* between two quantities stays the same, or their *total* stays the same. Recognising which quantity is constant unlocks the solution.
 
-**When to tag:** The question involves ages (age difference never changes), transfers where both sides change equally, or area/geometry problems where the difference between two regions stays constant despite changes.
+**When to tag:** The question involves a change where either the difference or the total between two quantities remains unchanged.
+
+### Sub-type: Constant Difference
+
+Two quantities change (e.g., both increase or decrease), but the *difference* between them stays the same. Applies to ages, transfers where both sides change equally, and geometry problems where overlapping areas maintain a constant difference.
 
 **Example:**
 > Ali is 8 years old. His father is 36 years old. In how many years will his father be 3 times Ali's age?
@@ -74,13 +105,9 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 > Difference is always 36 - 8 = 28. When father = 3x Ali:
 > 3x - x = 28, so x = 14. In 14 - 8 = **6 years**
 
----
+### Sub-type: Constant Total
 
-## Constant Total
-
-**What it is:** Two quantities change (one increases, the other decreases), but their *total* stays the same. Common in transfer problems.
-
-**When to tag:** The question involves transferring items between two people/groups without adding or removing from the system.
+Two quantities change (one increases, the other decreases), but their *total* stays the same. Common in transfer problems.
 
 **Example:**
 > Ali has 50 stickers and Ben has 30. How many stickers must Ali give Ben so they have the same number?
@@ -102,73 +129,6 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 
 ---
 
-## Excess & Shortage
-
-**What it is:** Comparing two different distribution scenarios — one results in excess (leftover), the other in shortage (not enough). The difference reveals the total.
-
-**When to tag:** The question describes two "what if" scenarios with different distributions.
-
-**Example:**
-> If each child gets 3 sweets, there are 2 left over. If each child gets 5 sweets, there are 6 short. How many children?
->
-> Difference per child: 5 - 3 = 2. Difference in total: 2 + 6 = 8.
-> Number of children = 8 / 2 = **4**
-
----
-
-## Folded Shapes
-
-**What it is:** Problems where paper or a shape is folded along a line, and students must find angles, lengths, or areas after the fold. Key insight: folding preserves lengths and creates equal angles.
-
-**When to tag:** The question explicitly mentions folding, or shows a dashed fold line in the diagram.
-
-**Example:**
-> A rectangular piece of paper is folded along a diagonal. The overlapping region forms a triangle. Find angle x.
->
-> Since folding preserves the angle, the folded angle = the original angle. Use angle sum of triangle = 180°.
-
----
-
-## Gap & Overlap
-
-**What it is:** When two or more regions overlap, the total area = sum of individual areas minus the overlap. When there's a gap, total = sum + gap. A counting principle applied to geometry.
-
-**When to tag:** The question involves overlapping shapes (e.g., two circles overlapping, or shaded regions that double-count an area).
-
-**Example:**
-> Two squares of side 10 cm overlap with a 3 cm × 3 cm shared region. Find the total area covered.
->
-> Total = 10² + 10² - 3² = 100 + 100 - 9 = **191 cm²**
-
----
-
-## Guess & Check
-
-**What it is:** Making a systematic guess, checking if it satisfies all conditions, then adjusting. Often organised in a table.
-
-**When to tag:** The problem has two unknowns with constraints, and trial-and-error is a natural approach (especially when values are small integers).
-
-**Example:**
-> A farmer has chickens and cows. There are 10 animals and 28 legs. How many chickens?
->
-> Guess 5 chickens, 5 cows: 5(2) + 5(4) = 30 legs (too many)
-> Guess 6 chickens, 4 cows: 6(2) + 4(4) = 28 legs. **6 chickens**
-
----
-
-## Make a List / Table
-
-**What it is:** Organising data into a structured list or table to find a pattern or ensure all cases are covered.
-
-**When to tag:** The problem requires systematic enumeration or organising multiple pieces of data.
-
-**Example:**
-> How many 3-digit numbers can be formed using the digits 1, 2, 3 without repetition?
->
-> List: 123, 132, 213, 231, 312, 321 = **6 numbers**
-
----
-
 ## Model Drawing
 
 **What it is:** Drawing bar models (tape diagrams) to represent quantities visually. Bars represent unknowns and known values, making relationships visible.
@@ -185,22 +145,6 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 
 ---
 
-## One Item Unchanged
-
-**What it is:** In a before-after ratio problem, one quantity does not change. Make that item's units the same in both the before and after ratios to solve.
-
-**When to tag:** The question describes a change in ratio, and one of the quantities stays the same (e.g., "Ali gave some stickers to Ben. Ali's ratio changed from 5:3 to 2:3" — Ben's count didn't change if only Ali gave away).
-
-**Example:**
-> The ratio of Ali's money to Ben's money was 5:4. After Ali spent $60, the ratio became 5:8. How much money did Ben have?
->
-> Ben's money is unchanged. Before: A:B = 5:4. After: A:B = 5:8.
-> Make Ben's units the same: Before = 5:4 = 10:8. After = 5:8.
-> Ali's change: 10 units → 5 units = 5 units = $60. 1 unit = $12.
-> Ben = 8 units = **$96**
-
----
-
 ## Pattern Recognition
 
 **What it is:** Identifying a repeating or growing pattern in numbers, shapes, or sequences, then extending it to find the answer.
@@ -212,19 +156,6 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 >
 > Differences: 4, 6, 8, 10 (increasing by 2). Pattern: n(n+1).
 > 8th number = 8 x 9 = **72**
-
----
-
-## Proportionality
-
-**What it is:** Direct or inverse proportion. If one quantity doubles, the other doubles (direct) or halves (inverse).
-
-**When to tag:** The question involves scaling quantities up/down, or inverse relationships (more workers = less time).
-
-**Example:**
-> 4 workers can paint a wall in 6 hours. How long would 3 workers take?
->
-> Inverse proportion: 4 x 6 = 24 worker-hours. 24 / 3 = **8 hours**
 
 ---
 
@@ -244,20 +175,6 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 > | **Total** | 15 | | 480c |
 >
 > 20x + 50(15−x) = 480 → x = 7. So 50c coins = **8**
-
----
-
-## Remainder Concept
-
-**What it is:** Problems where a fraction of a quantity is used, then a fraction of the *remainder* is used, and so on. Requires tracking what's left at each step.
-
-**When to tag:** The question says things like "spent 1/3 of his money, then 1/4 of the remainder..."
-
-**Example:**
-> Ali had $120. He spent 1/3 of it on a book. He then spent 1/4 of the remainder on food. How much did he have left?
->
-> Spent on book: 1/3 x 120 = $40. Remainder = $80.
-> Spent on food: 1/4 x 80 = $20. Left = **$60**
 
 ---
 
@@ -288,24 +205,55 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 
 ---
 
-## Spotting Hidden Shapes
+## Spatial Reasoning
 
-**What it is:** Identifying familiar shapes (triangles, rectangles, semicircles, etc.) that are hidden or embedded within a more complex figure. The question can't be solved until you "see" the hidden shape.
+**What it is:** Perceiving or manipulating shapes to solve geometry or area/perimeter problems. Includes identifying hidden shapes, rearranging parts of a figure, reasoning about folds, and handling overlapping regions.
 
-**When to tag:** The diagram contains shapes that aren't explicitly labelled but must be identified to solve the problem.
+**When to tag:** The question requires visual reasoning about shapes — folding, overlapping, rearranging, or spotting embedded shapes.
+
+### Sub-type: Folded Shapes
+
+Problems where paper or a shape is folded along a line, and students must find angles, lengths, or areas after the fold. Key insight: folding preserves lengths and creates equal angles.
+
+**Example:**
+> A rectangular piece of paper is folded along a diagonal. The overlapping region forms a triangle. Find angle x.
+>
+> Since folding preserves the angle, the folded angle = the original angle. Use angle sum of triangle = 180°.
+
+### Sub-type: Gap & Overlap
+
+When two or more regions overlap, the total area = sum of individual areas minus the overlap. When there's a gap, total = sum + gap. A counting principle applied to geometry.
+
+**Example:**
+> Two squares of side 10 cm overlap with a 3 cm × 3 cm shared region. Find the total area covered.
+>
+> Total = 10² + 10² - 3² = 100 + 100 - 9 = **191 cm²**
+
+### Sub-type: Spotting Hidden Shapes
+
+Identifying familiar shapes (triangles, rectangles, semicircles, etc.) that are hidden or embedded within a more complex figure. The question can't be solved until you "see" the hidden shape.
 
 **Example:**
 > In the figure, ABCD is a rectangle. E is the midpoint of BC. Find the shaded area.
 >
 > The shaded region is actually a triangle AED. Spot it, then use ½ × base × height.
 
+### Sub-type: Visual Regrouping (Cut & Paste)
+
+Rearranging parts of a figure — mentally or on paper — by cutting a piece from one position and pasting it elsewhere to form a simpler shape (usually a rectangle or square).
+
+**Example:**
+> Find the area of an L-shaped figure (8 cm × 10 cm with a 4 cm × 5 cm rectangle removed).
+>
+> Cut the protruding part and paste it into the gap to form a full rectangle, or split into two rectangles and add.
+
 ---
 
 ## Supposition
 
-**What it is:** "Suppose all are X" — assume all items are one type, calculate the expected total, then compare with the actual total. The difference reveals how many are the other type.
+**What it is:** "Suppose all are X" — assume all items are one type, calculate the expected total, then compare with the actual total. The difference reveals how many are the other type. Covers systematic trial-and-error and excess/shortage scenarios.
 
-**When to tag:** Classic chickens-and-rabbits style problems, or any problem with two types and a combined total.
+**When to tag:** Classic chickens-and-rabbits style problems, any problem with two types and a combined total, or problems comparing two hypothetical distribution scenarios.
 
 **Example:**
 > There are 10 coins of 20-cent and 50-cent coins. The total value is $3.80. How many 50-cent coins?
@@ -313,19 +261,48 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 > Suppose all are 20c: 10 x 20 = 200c ($2.00). Actual = 380c.
 > Extra = 180c. Each swap (20c to 50c) adds 30c. So 180/30 = **6 fifty-cent coins**
 
+### Sub-type: Guess & Check
+
+Making a systematic guess, checking if it satisfies all conditions, then adjusting. Often organised in a table.
+
+**Example:**
+> A farmer has chickens and cows. There are 10 animals and 28 legs. How many chickens?
+>
+> Guess 5 chickens, 5 cows: 5(2) + 5(4) = 30 legs (too many)
+> Guess 6 chickens, 4 cows: 6(2) + 4(4) = 28 legs. **6 chickens**
+
+### Sub-type: Excess & Shortage
+
+Comparing two different distribution scenarios — one results in excess (leftover), the other in shortage (not enough). The difference reveals the total.
+
+**Example:**
+> If each child gets 3 sweets, there are 2 left over. If each child gets 5 sweets, there are 6 short. How many children?
+>
+> Difference per child: 5 - 3 = 2. Difference in total: 2 + 6 = 8.
+> Number of children = 8 / 2 = **4**
+
 ---
 
 ## Unitary Method
 
-**What it is:** Assigning "units" or "parts" to unknown quantities, then solving by finding the value of 1 unit. Similar to algebra but using the language of units.
+**What it is:** Assigning "units" or "parts" to unknown quantities, then solving by finding the value of 1 unit. Also covers proportional reasoning — finding a unit value and scaling up or down.
 
-**When to tag:** The question involves unknown quantities that can be represented as units (e.g., "3 units = 120, so 1 unit = 40").
+**When to tag:** The question involves unknown quantities that can be represented as units (e.g., "3 units = 120, so 1 unit = 40"), or direct/inverse proportion (scaling, more workers = less time).
 
 **Example:**
 > The ratio of boys to girls is 3 : 5. There are 40 students in total. How many boys are there?
 >
 > 3 units + 5 units = 8 units = 40
 > 1 unit = 5, boys = 3 units = **15**
+
+### Sub-type: Proportionality
+
+Direct or inverse proportion. If one quantity doubles, the other doubles (direct) or halves (inverse).
+
+**Example:**
+> 4 workers can paint a wall in 6 hours. How long would 3 workers take?
+>
+> Inverse proportion: 4 x 6 = 24 worker-hours. 24 / 3 = **8 hours**
 
 ---
 
@@ -339,19 +316,6 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 > In the figure, AB is parallel to CD. Find angle x.
 >
 > Draw a line through the vertex parallel to AB and CD. Use alternate angles to split x into two parts that can each be found.
-
----
-
-## Visual Regrouping (Cut & Paste)
-
-**What it is:** Rearranging parts of a figure — mentally or on paper — by cutting a piece from one position and pasting it elsewhere to form a simpler shape (usually a rectangle or square).
-
-**When to tag:** The area/perimeter problem has an irregular shape that becomes simple if you move a piece.
-
-**Example:**
-> Find the area of an L-shaped figure (8 cm × 10 cm with a 4 cm × 5 cm rectangle removed).
->
-> Cut the protruding part and paste it into the gap to form a full rectangle, or split into two rectangles and add.
 
 ---
 

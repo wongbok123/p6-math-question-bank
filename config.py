@@ -191,33 +191,23 @@ TOPICS = [
     "Whole Numbers",
 ]
 
-# Heuristics (26) — Singapore Math problem-solving strategies, sorted alphabetically
+# Heuristics (15) — Singapore Math problem-solving strategies, sorted alphabetically
+# Consolidated from 26 (v0.8) to 15 (v0.9) by merging related sub-techniques.
 HEURISTICS = [
-    "All Items Changed",
     "Before-After",
     "Boomerang & Rugby",
     "Branching",
-    "Constant Difference",
-    "Constant Total",
+    "Constant Quantity",
     "Equal Portions",
-    "Excess & Shortage",
-    "Folded Shapes",
-    "Gap & Overlap",
-    "Guess & Check",
-    "Make a List / Table",
     "Model Drawing",
-    "One Item Unchanged",
     "Pattern Recognition",
-    "Proportionality",
     "Quantity × Value",
-    "Remainder Concept",
     "Repeated Items",
     "Simultaneous Concept",
-    "Spotting Hidden Shapes",
+    "Spatial Reasoning",
     "Supposition",
     "Unitary Method",
     "Using Parallel Lines",
-    "Visual Regrouping (Cut & Paste)",
     "Working Backwards",
 ]
 
@@ -249,31 +239,20 @@ You will be given the question image, extracted text, and the answer.
 
 === VALID HEURISTICS (pick 0-3) ===
 - "Model Drawing": bar model / tape diagram approach
-- "Before-After": comparing quantities before and after a change
+- "Before-After": comparing quantities before and after a change — includes one-item-unchanged (one quantity stays constant, make its units the same in before/after ratios) and all-items-changed (all quantities change, use a working table to track before/after values)
 - "Working Backwards": starting from end result to find the beginning
-- "Unitary Method": using units/parts to represent unknowns (e.g., 3 units = 120)
-- "Guess & Check": systematic trial with checking
-- "Make a List / Table": organizing data systematically
+- "Unitary Method": using units/parts to represent unknowns (e.g., 3 units = 120) — also covers direct/inverse proportionality (scaling up/down, more workers = less time)
 - "Pattern Recognition": finding number/shape patterns
-- "Branching": tree diagrams, systematic counting, probability trees
-- "Remainder Concept": problems involving fractions of remainders (e.g., "spent 1/3, then 1/4 of the remainder")
-- "Excess & Shortage": comparing two distribution scenarios
-- "Constant Difference": quantities change but their difference stays the same (ages, area problems with overlapping figures, etc.)
-- "Constant Total": quantities change but their total stays the same
+- "Branching": tree diagrams, systematic counting, probability trees — also covers remainder concept (fractions of remainders, e.g., "spent 1/3, then 1/4 of the remainder") and systematic listing/tabulation
+- "Constant Quantity": an invariant quantity persists through a change — either a constant difference (e.g., age gap never changes) or a constant total (e.g., transfer problems where the sum stays the same)
 - "Equal Portions": fraction/percentage/decimal of A = fraction/percentage/decimal of B (equating portions of different wholes)
-- "Supposition": "Suppose all are X, then adjust..." approach
+- "Supposition": "Suppose all are X, then adjust..." approach — also covers guess-and-check (systematic trial) and excess-and-shortage (comparing two distribution scenarios)
 - "Simultaneous Concept": two unknowns, two conditions
-- "Proportionality": direct or inverse proportion
 - "Repeated Items": a common item appears in two different ratios — make its units consistent across both before combining (e.g., A:B = 2:3 and B:C = 4:5, make B the same)
-- "One Item Unchanged": in a before-after ratio problem, one quantity does not change — make its units the same in both the before and after ratios
-- "All Items Changed": all quantities change by different amounts in a before-after scenario — use a working table to track before/after values and find new relationships
 - "Quantity × Value": given total quantity and total value of mixed items, use a structured table (quantity × unit value = total value) to find the breakdown
 - "Boomerang & Rugby": composite area/perimeter using boomerang (quadrant removed from square) or half-rugby (triangle removed from quadrant)
-- "Visual Regrouping (Cut & Paste)": rearranging parts of a figure (cut one piece, paste elsewhere) to simplify area/perimeter calculation
-- "Folded Shapes": paper folding problems — finding angles, lengths, or areas after a fold
-- "Spotting Hidden Shapes": identifying triangles, rectangles, or other shapes embedded within a complex figure
+- "Spatial Reasoning": perceiving or manipulating shapes — includes folded shapes (paper folding, preserved lengths/angles), gap & overlap (total = A + B − overlap), spotting hidden shapes (embedded triangles/rectangles), and visual regrouping / cut & paste (rearranging parts to simplify area/perimeter)
 - "Using Parallel Lines": using properties of parallel lines (alternate angles, corresponding angles) to bridge disjointed parts of a figure
-- "Gap & Overlap": total = A + B - overlap, or total = A + B + gap; combining/subtracting overlapping regions
 
 === RULES ===
 1. You MUST pick at least 1 topic. Pick at most 2 topics.

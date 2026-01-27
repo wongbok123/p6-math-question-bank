@@ -92,6 +92,23 @@ except Exception:
 ALL_TOPICS = set(TOPICS)
 ALL_HEURISTICS = set(HEURISTICS)
 
+# Remap old heuristic names (26 → 15 consolidation)
+HEURISTIC_REMAP = {
+    "All Items Changed": "Before-After",
+    "One Item Unchanged": "Before-After",
+    "Constant Difference": "Constant Quantity",
+    "Constant Total": "Constant Quantity",
+    "Excess & Shortage": "Supposition",
+    "Folded Shapes": "Spatial Reasoning",
+    "Gap & Overlap": "Spatial Reasoning",
+    "Guess & Check": "Supposition",
+    "Make a List / Table": "Branching",
+    "Proportionality": "Unitary Method",
+    "Remainder Concept": "Branching",
+    "Spotting Hidden Shapes": "Spatial Reasoning",
+    "Visual Regrouping (Cut & Paste)": "Spatial Reasoning",
+}
+
 
 def load_few_shot_examples(path: str) -> str:
     """Load few-shot examples from a JSON file and format for the prompt."""
@@ -146,9 +163,12 @@ def validate_tags(result: dict) -> dict:
             print(f"    [WARN] Unknown topic: '{raw_topic}'")
 
     for raw_h in result.get("heuristics", []):
-        matched = fuzzy_match_tag(raw_h, ALL_HEURISTICS)
+        # Remap old heuristic names to consolidated names
+        remapped = HEURISTIC_REMAP.get(raw_h, raw_h)
+        matched = fuzzy_match_tag(remapped, ALL_HEURISTICS)
         if matched:
-            cleaned["heuristics"].append(matched)
+            if matched not in cleaned["heuristics"]:
+                cleaned["heuristics"].append(matched)
         else:
             print(f"    [WARN] Unknown heuristic: '{raw_h}'")
 

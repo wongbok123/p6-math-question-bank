@@ -16,7 +16,7 @@
 - [x] **Manual Editing**: Password-protected UI editing (v0.6)
 - [x] **P1B Multi-Part Fix**: Fixed P1B part (b) answer extraction (v0.6)
 - [x] **Firebase Migration**: Cloud database + storage for persistent edits (v0.7)
-- [x] **Topic Tagging Taxonomy**: 18 topics + 26 heuristics defined, aligned to MOE syllabus (v0.8)
+- [x] **Topic Tagging Taxonomy**: 18 topics + 15 heuristics defined, aligned to MOE syllabus (v0.9)
 - [x] **Topic Tagging Pipeline**: Gemini-powered auto-tagging with fuzzy matching (v0.8)
 - [x] **Topic Tagging UI**: Multi-select filters, colored tag pills, pagination (v0.8)
 - [ ] **Topic Tagging QA**: Review heuristic tags on P2 questions (in progress)
@@ -36,7 +36,7 @@
 
 **Taxonomy** (aligned to MOE P1-P6 syllabus):
 - **18 topics**: Algebra, Area & Perimeter, Data Analysis (Average), Data Analysis (Graphs & Tables), Decimals, Fractions, Geometry, Measurement, Money, Number Properties, Patterns & Sequences, Percentage, Rate, Ratio, Speed, Time, Volume, Whole Numbers
-- **26 heuristics**: All Items Changed, Before-After, Boomerang & Rugby, Branching, Constant Difference, Constant Total, Equal Portions, Excess & Shortage, Folded Shapes, Gap & Overlap, Guess & Check, Make a List / Table, Model Drawing, One Item Unchanged, Pattern Recognition, Proportionality, Quantity x Value, Remainder Concept, Repeated Items, Simultaneous Concept, Spotting Hidden Shapes, Supposition, Unitary Method, Using Parallel Lines, Visual Regrouping (Cut & Paste), Working Backwards
+- **15 heuristics**: Before-After, Boomerang & Rugby, Branching, Constant Quantity, Equal Portions, Model Drawing, Pattern Recognition, Quantity x Value, Repeated Items, Simultaneous Concept, Spatial Reasoning, Supposition, Unitary Method, Using Parallel Lines, Working Backwards
 - Full glossary with examples: `HEURISTICS_GLOSSARY.md`
 
 **Pipeline**: `tag_topics.py` — Gemini Vision auto-tags each question with topics (1-2) and heuristics (0-3). Fuzzy matching corrects near-misses. Confidence < 0.7 flagged for review.
@@ -90,7 +90,7 @@ python3 fix_questions.py --school "School Name" --renumber P2_0 P2_8
 
 #### Taxonomy Design
 - **18 topics** aligned to MOE P1-P6 syllabus (sorted alphabetically in config.py)
-- **26 heuristics** covering Singapore Math problem-solving strategies
+- **15 heuristics** covering Singapore Math problem-solving strategies (consolidated from 26 in v0.9)
 - Full glossary with "What it is", "When to tag", and worked examples in `HEURISTICS_GLOSSARY.md`
 
 #### Auto-Tagging Pipeline (`tag_topics.py`)

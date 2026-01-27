@@ -1,6 +1,6 @@
 """
 Heuristics Glossary page for P6 Math Question Bank.
-Displays all 26 heuristics with definitions, tagging guidance, and examples.
+Displays all 15 heuristics with definitions, tagging guidance, and examples.
 """
 
 import streamlit as st
@@ -44,8 +44,8 @@ def main():
         "These are the methods students use to solve word problems, not the topics themselves."
     )
     st.markdown(
-        "A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward "
-        "computation questions typically have **none**. P2 multi-step word problems often use 1-2."
+        "A question can have **0-3 heuristics**. Simple Paper 1 Booklet A MCQs and straightforward "
+        "computation questions typically have **none**. Paper 2 multi-step word problems often use 1-2."
     )
 
     # Load and parse glossary
@@ -72,6 +72,7 @@ def main():
         body = entries.get(name, "*No glossary entry found.*")
 
         with st.expander(f"**{name}**", expanded=not search):
+            st.markdown(f"### :orange[{name}]")
             st.markdown(body)
 
 
