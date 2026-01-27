@@ -16,7 +16,11 @@
 - [x] **Manual Editing**: Password-protected UI editing (v0.6)
 - [x] **P1B Multi-Part Fix**: Fixed P1B part (b) answer extraction (v0.6)
 - [x] **Firebase Migration**: Cloud database + storage for persistent edits (v0.7)
-- [ ] **Topic Tagging**: Tag questions by topic, type, heuristics (Phase 2)
+- [x] **Topic Tagging Taxonomy**: 18 topics + 26 heuristics defined, aligned to MOE syllabus (v0.8)
+- [x] **Topic Tagging Pipeline**: Gemini-powered auto-tagging with fuzzy matching (v0.8)
+- [x] **Topic Tagging UI**: Multi-select filters, colored tag pills, pagination (v0.8)
+- [ ] **Topic Tagging QA**: Review heuristic tags on P2 questions (in progress)
+- [ ] **Heuristics Glossary Page**: Frontend page displaying glossary (pending)
 - [ ] **Historical Data**: Extract 2023 and 2024 papers (Phase 3)
 
 ---
@@ -28,23 +32,26 @@
 - **Manual QA in progress** - reviewers checking answers via UI
 - **Edit mode available** - corrections saved to Firebase
 
-### Next Phase: Topic Tagging (In Development)
-While manual QA continues, develop topic labeling system:
+### Phase 2: Topic Tagging (In Progress — v0.8)
 
-1. **Design Topic Taxonomy**
-   - Primary topics: Whole Numbers, Fractions, Decimals, Percentage, Ratio, Rate, Algebra, Geometry, Area/Perimeter, Volume, Data Analysis
-   - Question types: Word Problem, Computation, Diagram-based, Multi-step
-   - Heuristics: Before-After, Units & Parts, Model Drawing, Working Backwards, etc.
+**Taxonomy** (aligned to MOE P1-P6 syllabus):
+- **18 topics**: Algebra, Area & Perimeter, Data Analysis (Average), Data Analysis (Graphs & Tables), Decimals, Fractions, Geometry, Measurement, Money, Number Properties, Patterns & Sequences, Percentage, Rate, Ratio, Speed, Time, Volume, Whole Numbers
+- **26 heuristics**: All Items Changed, Before-After, Boomerang & Rugby, Branching, Constant Difference, Constant Total, Equal Portions, Excess & Shortage, Folded Shapes, Gap & Overlap, Guess & Check, Make a List / Table, Model Drawing, One Item Unchanged, Pattern Recognition, Proportionality, Quantity x Value, Remainder Concept, Repeated Items, Simultaneous Concept, Spotting Hidden Shapes, Supposition, Units & Parts, Using Parallel Lines, Visual Regrouping (Cut & Paste), Working Backwards
+- Full glossary with examples: `HEURISTICS_GLOSSARY.md`
 
-2. **Implementation Approach**
-   - Use Gemini to auto-tag questions based on question text + image
-   - Store tags in `topic_tags` field (JSON array)
-   - Add UI filters for topic-based browsing
+**Pipeline**: `tag_topics.py` — Gemini Vision auto-tags each question with topics (1-2) and heuristics (0-3). Fuzzy matching corrects near-misses. Confidence < 0.7 flagged for review.
 
-3. **Validation**
-   - Test on subset of questions
-   - Compare AI tags with manual labels
-   - Refine prompts for accuracy
+**Current progress**:
+- 30 calibration questions tagged and manually reviewed
+- ~165 P2 questions tagged (heuristic review in progress)
+- Remaining ~430 questions to be tagged after QA pass
+
+**Two-pass workflow**:
+1. `python tag_topics.py --limit 30` — calibrate on small batch
+2. Review tags in UI, correct errors
+3. `python tag_topics.py --force` — tag all questions
+
+**UI**: Multi-select topic/heuristic filters, colored tag pills (blue = topic, orange = heuristic), pagination (20/page), "Needs Review" toggle.
 
 ### Future Phase: 2023/2024 Extraction
 After topic tagging is stable:
@@ -79,7 +86,44 @@ python3 fix_questions.py --school "School Name" --renumber P2_0 P2_8
 
 ---
 
-### Recent Fixes (v0.7) - January 2025
+### Recent: Topic Tagging (v0.8) - January 2025
+
+#### Taxonomy Design
+- **18 topics** aligned to MOE P1-P6 syllabus (sorted alphabetically in config.py)
+- **26 heuristics** covering Singapore Math problem-solving strategies
+- Full glossary with "What it is", "When to tag", and worked examples in `HEURISTICS_GLOSSARY.md`
+
+#### Auto-Tagging Pipeline (`tag_topics.py`)
+- Gemini Vision classifies each question using image + text + answer
+- Fuzzy matching corrects near-misses (e.g., "Fraction" -> "Fractions")
+- Confidence scoring: < 0.7 flagged for human review
+- CLI flags: `--school`, `--section`, `--force`, `--dry-run`, `--limit N`, `--validate`
+- Rate limiting (15 RPM) with exponential backoff
+
+#### Database Updates
+- New columns: `topics`, `heuristics`, `confidence`, `needs_review`
+- Both SQLite (`database.py`) and Firebase (`firebase_db.py`) support topic fields
+- `update_topic_tags()` function for saving classifications
+- Query filtering by topics/heuristics (OR within, AND across)
+
+#### UI Enhancements
+- **Multi-select topic/heuristic filters** in sidebar
+- **Colored tag pills**: blue (topics), orange (heuristics)
+- **Pagination**: 20 questions per page with Previous/Next navigation
+- **Caching**: `@st.cache_data` for Firebase calls (120-300s TTL)
+- **Client-side filtering** for topics/heuristics (instant, no Firebase round-trip)
+- **"Needs Review" toggle** to find low-confidence tags
+- **Tagging stats** in sidebar (Tagged: X/624, Needs Review: Y)
+- Removed Marks filter for cleaner UI
+- Edit mode supports topic/heuristic editing per question
+
+#### Data Cleanup
+- Fixed bogus MCQ options on P1B short-answer questions (14 questions across 3 schools)
+- Manual tag corrections on calibration batch (Q5-Q13 reviewed)
+
+---
+
+### Previous Fixes (v0.7) - January 2025
 
 #### Firebase Migration
 - **Cloud database**: All questions now stored in Firebase Firestore
@@ -267,6 +311,26 @@ python3 solve_questions.py --section P2 --force
 python3 parse_answers.py --pdf "file.pdf" --pages 45-48
 
 #=============================================================================
+# TOPIC TAGGING (Phase 2)
+#=============================================================================
+
+# Tag 30 calibration questions (dry run first)
+python3 tag_topics.py --dry-run --limit 30
+python3 tag_topics.py --limit 30
+
+# Tag all P2 questions
+python3 tag_topics.py --section P2
+
+# Re-tag with force (overwrite existing tags)
+python3 tag_topics.py --force
+
+# Tag a specific school
+python3 tag_topics.py --school "ACS Junior"
+
+# Validate all stored tags against taxonomy
+python3 tag_topics.py --validate
+
+#=============================================================================
 # UTILITIES
 #=============================================================================
 
@@ -321,7 +385,11 @@ CREATE TABLE questions (
     answer TEXT,                      -- Final answer for this part
     worked_solution TEXT,             -- Step-by-step working
     question_diagram TEXT,            -- For question diagram images
-    topic_tags TEXT,                  -- JSON array
+    topic_tags TEXT,                  -- JSON array (legacy)
+    topics TEXT,                      -- JSON array of topic tags (e.g., ["Ratio", "Money"])
+    heuristics TEXT,                  -- JSON array of heuristic tags (e.g., ["Units & Parts"])
+    confidence REAL,                  -- AI classification confidence (0.0-1.0)
+    needs_review INTEGER DEFAULT 0,  -- 1 if confidence < 0.7
     created_at TIMESTAMP,
     UNIQUE(school, year, paper_section, question_num, COALESCE(part_letter, ''))
 );
@@ -336,14 +404,16 @@ P6 Bank/
 ├── gemini_pipeline.py    # Extract questions from PDF pages
 ├── verify_and_solve.py   # Hybrid: verify answer key + solve if wrong
 ├── solve_questions.py    # Direct AI solver for questions
+├── tag_topics.py         # Gemini-powered topic & heuristic tagging
 ├── parse_answers.py      # Legacy: simple Q# matching (kept for reference)
 ├── segmenter.py          # OpenCV question region detection
 ├── database.py           # SQLite operations (local development)
 ├── firebase_db.py        # Firebase Firestore + Storage operations
-├── config.py             # Paths and settings
+├── config.py             # Paths, settings, taxonomy constants, classification prompt
 ├── requirements.txt      # Python dependencies
 ├── .env                  # GEMINI_API_KEY (not committed)
 ├── firebase-key.json     # Firebase credentials (not committed)
+├── HEURISTICS_GLOSSARY.md # Heuristics reference with examples
 ├── scripts/              # One-time migration/fix scripts
 │   ├── fix_p1a_mcq.py        # Fix P1A MCQ answers
 │   ├── migrate_to_firebase.py # SQLite to Firebase migration
@@ -351,7 +421,7 @@ P6 Bank/
 ├── utils/
 │   └── gemini_client.py  # Gemini API client + prompts
 ├── ui/
-│   └── app.py            # Streamlit viewer with edit mode
+│   └── app.py            # Streamlit viewer with edit mode + topic filters
 ├── pdfs/                 # Input PDFs (not committed)
 ├── output/               # Local data (images backed up to Firebase)
 │   ├── p6_questions.db   # SQLite database (local backup)
@@ -491,7 +561,8 @@ The hybrid approach solves the answer key matching problem:
 - **Verbose explanations**: Some AI answers include extra text
 
 ### UI/UX
-- [ ] Add question filtering by topic
+- [x] Add question filtering by topic (v0.8)
+- [ ] Add heuristics glossary page
 - [ ] Add export to PDF/Word functionality
 - [ ] Add batch processing UI
 - [ ] Add answer verification dashboard

@@ -2,6 +2,7 @@
 Streamlit UI for P6 Math Question Bank viewer.
 """
 
+import re
 import streamlit as st
 from pathlib import Path
 import sys
@@ -10,7 +11,10 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import UI_PAGE_TITLE, UI_PAGE_ICON, UI_LAYOUT, PAPER_SECTIONS, SECTION_FULL_NAMES
+from config import (
+    UI_PAGE_TITLE, UI_PAGE_ICON, UI_LAYOUT, PAPER_SECTIONS, SECTION_FULL_NAMES,
+    TOPICS, HEURISTICS,
+)
 
 # Use Firebase if available, fallback to SQLite
 USE_FIREBASE = os.environ.get('USE_FIREBASE', 'true').lower() == 'true'
@@ -26,6 +30,7 @@ try:
             update_answer,
             update_question_text,
             update_question_metadata,
+            update_topic_tags,
             upload_image_bytes,
             get_image_url,
         )
@@ -47,10 +52,51 @@ except Exception as e:
     USING_FIREBASE = False
     upload_image_bytes = None
     get_image_url = None
+    update_topic_tags = None
 
 # Directory for uploaded solution images (local fallback)
 SOLUTIONS_DIR = Path(__file__).parent.parent / "output" / "images" / "solutions"
 SOLUTIONS_DIR.mkdir(parents=True, exist_ok=True)
+
+QUESTIONS_PER_PAGE = 20
+
+
+# ── Cached data fetchers ──────────────────────────────────────────────
+@st.cache_data(ttl=300)
+def cached_get_statistics():
+    return get_statistics()
+
+@st.cache_data(ttl=300)
+def cached_get_schools():
+    return get_all_schools()
+
+@st.cache_data(ttl=300)
+def cached_get_years():
+    return get_all_years()
+
+@st.cache_data(ttl=120)
+def cached_get_questions(school=None, year=None, paper_section=None):
+    """Fetch questions with base filters only. Topic/heuristic filtering done client-side."""
+    params = {}
+    if school:
+        params["school"] = school
+    if year:
+        params["year"] = year
+    if paper_section:
+        params["paper_section"] = paper_section
+    return get_questions(**params)
+
+
+def filter_questions_client_side(questions, topics=None, heuristics=None, needs_review=False):
+    """Fast client-side filtering for topic/heuristic selections."""
+    result = questions
+    if topics:
+        result = [q for q in result if any(t in (q.get('topics') or []) for t in topics)]
+    if heuristics:
+        result = [q for q in result if any(h in (q.get('heuristics') or []) for h in heuristics)]
+    if needs_review:
+        result = [q for q in result if q.get('needs_review')]
+    return result
 
 
 def main():
@@ -65,17 +111,17 @@ def main():
 
     # Initialize database if needed
     try:
-        stats = get_statistics()
+        stats = cached_get_statistics()
     except Exception:
         init_db()
-        stats = get_statistics()
+        stats = cached_get_statistics()
 
     # Sidebar filters
     with st.sidebar:
         st.header("Filters")
 
         # School filter
-        schools = get_all_schools()
+        schools = cached_get_schools()
         if schools:
             selected_school = st.selectbox(
                 "School",
@@ -87,7 +133,7 @@ def main():
             st.info("No schools in database yet")
 
         # Year filter
-        years = get_all_years()
+        years = cached_get_years()
         if years:
             selected_year = st.selectbox(
                 "Year",
@@ -115,15 +161,18 @@ def main():
             "All"
         )
 
-        # Marks filter
-        selected_marks = st.selectbox(
-            "Marks",
-            ["All", "1", "2", "3", "4", "5"],
-            index=0,
-        )
-
         # Show answer toggle (default ON for easy verification)
         show_answers = st.checkbox("Show Answers", value=True)
+
+        st.divider()
+
+        # Topic filters
+        st.header("Topic Filters")
+
+        selected_topics = st.multiselect("Topics", options=TOPICS, default=[])
+        selected_heuristics = st.multiselect("Heuristics", options=HEURISTICS, default=[])
+
+        show_needs_review = st.checkbox("Show Only Needs Review", value=False)
 
         st.divider()
 
@@ -161,19 +210,31 @@ def main():
             for section, count in stats["by_section"].items():
                 st.text(f"{section}: {count}")
 
-    # Build query parameters
-    query_params = {}
-    if selected_school != "All":
-        query_params["school"] = selected_school
-    if selected_year != "All":
-        query_params["year"] = int(selected_year)
-    if selected_section != "All":
-        query_params["paper_section"] = selected_section
-    if selected_marks != "All":
-        query_params["marks"] = int(selected_marks)
+        # Tagging progress
+        st.subheader("Tagging")
+        tagged_count = stats.get("tagged_count", "—")
+        review_count = stats.get("review_count", "—")
+        st.text(f"Tagged: {tagged_count} / {stats['total_questions']}")
+        st.text(f"Needs Review: {review_count}")
 
-    # Get questions
-    questions = get_questions(**query_params)
+    # ── Fetch and filter questions ────────────────────────────────────
+    base_school = selected_school if selected_school != "All" else None
+    base_year = int(selected_year) if selected_year != "All" else None
+    base_section = selected_section if selected_section != "All" else None
+
+    all_questions = cached_get_questions(
+        school=base_school,
+        year=base_year,
+        paper_section=base_section,
+    )
+
+    # Client-side filtering for topics/heuristics (instant, no Firebase call)
+    questions = filter_questions_client_side(
+        all_questions,
+        topics=selected_topics or None,
+        heuristics=selected_heuristics or None,
+        needs_review=show_needs_review,
+    )
 
     if not questions:
         st.info("No questions found. Run the pipeline to extract questions from PDFs.")
@@ -213,10 +274,44 @@ def main():
             """)
         return
 
-    # Display questions
-    st.subheader(f"Questions ({len(questions)} results)")
+    # ── Pagination ────────────────────────────────────────────────────
+    total_questions = len(questions)
+    total_pages = max(1, (total_questions + QUESTIONS_PER_PAGE - 1) // QUESTIONS_PER_PAGE)
 
-    for i, q in enumerate(questions):
+    # Initialize page in session state
+    if "page" not in st.session_state:
+        st.session_state.page = 1
+    # Reset to page 1 when filters change
+    filter_key = f"{base_school}|{base_year}|{base_section}|{selected_topics}|{selected_heuristics}|{show_needs_review}"
+    if st.session_state.get("_last_filter_key") != filter_key:
+        st.session_state.page = 1
+        st.session_state._last_filter_key = filter_key
+
+    current_page = st.session_state.page
+
+    st.subheader(f"Questions ({total_questions} results)")
+
+    # Top pagination controls
+    if total_pages > 1:
+        col_prev, col_info, col_next = st.columns([1, 2, 1])
+        with col_prev:
+            if st.button("← Previous", disabled=current_page <= 1, key="prev_top"):
+                st.session_state.page = max(1, current_page - 1)
+                st.rerun()
+        with col_info:
+            st.markdown(f"**Page {current_page} of {total_pages}**")
+        with col_next:
+            if st.button("Next →", disabled=current_page >= total_pages, key="next_top"):
+                st.session_state.page = min(total_pages, current_page + 1)
+                st.rerun()
+
+    # Slice questions for current page
+    start_idx = (current_page - 1) * QUESTIONS_PER_PAGE
+    end_idx = start_idx + QUESTIONS_PER_PAGE
+    page_questions = questions[start_idx:end_idx]
+
+    # ── Display questions ─────────────────────────────────────────────
+    for i, q in enumerate(page_questions):
         with st.container():
             # Header row
             col1, col2, col3 = st.columns([3, 1, 1])
@@ -264,7 +359,7 @@ def main():
                             if relative_path.exists():
                                 st.image(str(relative_path), use_column_width=True)
                             else:
-                                st.info("📷 Image not available on cloud")
+                                st.info("Image not available on cloud")
 
             with col_text:
                 # LaTeX text - show main context first if available
@@ -295,8 +390,6 @@ def main():
                 # Show worked solution if available
                 if q.get("worked_solution"):
                     worked = q["worked_solution"]
-                    # Check if there's a solution image reference
-                    import re
                     img_match = re.search(r'\[Solution Image: (.+?)\]', worked)
                     img_url_match = re.search(r'\[Solution URL: (.+?)\]', worked)
 
@@ -319,7 +412,6 @@ def main():
                 # Show question diagram if available
                 if q.get("question_diagram"):
                     diagram_desc = q["question_diagram"]
-                    import re
                     diag_url_match = re.search(r'\[Diagram URL: (.+?)\]', diagram_desc)
                     diag_img_match = re.search(r'\[Diagram Image: (.+?)\]', diagram_desc)
 
@@ -335,9 +427,18 @@ def main():
                             # Plain text description
                             st.markdown(diagram_desc)
 
+            # Topic tag pills
+            tag_pills = []
+            for t in (q.get('topics') or []):
+                tag_pills.append(f'<span style="background:#3b82f6;color:#fff;padding:2px 8px;border-radius:12px;font-size:0.8em;margin-right:4px;">{t}</span>')
+            for h in (q.get('heuristics') or []):
+                tag_pills.append(f'<span style="background:#f59e0b;color:#fff;padding:2px 8px;border-radius:12px;font-size:0.8em;margin-right:4px;">{h}</span>')
+            if tag_pills:
+                st.markdown("".join(tag_pills), unsafe_allow_html=True)
+
             # Edit section (only shown when edit mode is enabled)
             if edit_mode:
-                with st.expander(f"✏️ Edit Q{display_num}"):
+                with st.expander(f"Edit Q{display_num}"):
                     # Metadata editing (marks, question num, paper section)
                     st.markdown("**Question Metadata**")
                     meta_col1, meta_col2, meta_col3 = st.columns(3)
@@ -361,11 +462,11 @@ def main():
                         )
 
                     with meta_col3:
-                        section_options = ["P1A", "P1B", "P2"]
-                        current_section_idx = section_options.index(q['paper_section']) if q['paper_section'] in section_options else 0
+                        edit_section_options = ["P1A", "P1B", "P2"]
+                        current_section_idx = edit_section_options.index(q['paper_section']) if q['paper_section'] in edit_section_options else 0
                         new_section = st.selectbox(
                             "Paper Section",
-                            section_options,
+                            edit_section_options,
                             index=current_section_idx,
                             key=f"section_{q['id']}"
                         )
@@ -429,10 +530,24 @@ def main():
                             key=f"context_{q['id']}"
                         )
 
+                    st.markdown("**Topic Tags**")
+                    new_topics = st.multiselect(
+                        "Topics",
+                        options=TOPICS,
+                        default=q.get("topics") or [],
+                        key=f"topics_{q['id']}"
+                    )
+                    new_heuristics = st.multiselect(
+                        "Heuristics",
+                        options=HEURISTICS,
+                        default=q.get("heuristics") or [],
+                        key=f"heuristics_{q['id']}"
+                    )
+
                     # Save button
                     col_save, col_status = st.columns([1, 2])
                     with col_save:
-                        if st.button(f"💾 Save", key=f"save_{q['id']}"):
+                        if st.button("Save", key=f"save_{q['id']}"):
                             success = True
                             new_diagram_desc = q.get("question_diagram") or ""
 
@@ -519,6 +634,8 @@ def main():
                             marks_changed = new_marks != q.get("marks")
                             qnum_changed = new_q_num != q.get("question_num")
                             section_changed = new_section != q.get("paper_section")
+                            topics_changed = sorted(new_topics) != sorted(q.get("topics") or [])
+                            heuristics_changed = sorted(new_heuristics) != sorted(q.get("heuristics") or [])
 
                             # Update metadata if changed
                             if marks_changed or qnum_changed or section_changed:
@@ -554,8 +671,18 @@ def main():
                                     part_letter=q.get('part_letter')
                                 ) and success
 
+                            if (topics_changed or heuristics_changed) and update_topic_tags:
+                                success = update_topic_tags(
+                                    question_id=q['id'],
+                                    topics=new_topics if topics_changed else None,
+                                    heuristics=new_heuristics if heuristics_changed else None,
+                                ) and success
+
                             if success:
                                 st.success("Saved!")
+                                # Clear cache so changes show up
+                                cached_get_questions.clear()
+                                cached_get_statistics.clear()
                                 st.rerun()
                             else:
                                 st.error("Failed to save")
@@ -566,19 +693,39 @@ def main():
 
             st.divider()
 
+    # Bottom pagination controls
+    if total_pages > 1:
+        col_prev, col_info, col_next = st.columns([1, 2, 1])
+        with col_prev:
+            if st.button("← Previous", disabled=current_page <= 1, key="prev_bottom"):
+                st.session_state.page = max(1, current_page - 1)
+                st.rerun()
+        with col_info:
+            st.markdown(f"**Page {current_page} of {total_pages}**")
+        with col_next:
+            if st.button("Next →", disabled=current_page >= total_pages, key="next_bottom"):
+                st.session_state.page = min(total_pages, current_page + 1)
+                st.rerun()
+
 
 def show_paper_structure():
     """Display paper structure reference."""
     st.subheader("Paper Structure Reference")
 
     for section, info in PAPER_SECTIONS.items():
-        st.markdown(f"**{info['name']} ({section})**")
+        total_marks = info.get('total_marks', '')
+        marks_label = f" — {total_marks} marks" if total_marks else ""
+        st.markdown(f"**{info['name']} ({section}){marks_label}**")
         for range_info in info["question_ranges"]:
-            marks = range_info["marks"] if range_info["marks"] else "3-5"
+            marks = range_info["marks"]
+            if marks:
+                marks_text = f"{marks} mark{'s' if marks > 1 else ''} each"
+            else:
+                marks_text = "marks vary"
             st.markdown(
                 f"- Q{range_info['start']}-{range_info['end']}: "
                 f"{range_info['type'].replace('_', ' ').title()} "
-                f"({marks} marks each)"
+                f"({marks_text})"
             )
 
 

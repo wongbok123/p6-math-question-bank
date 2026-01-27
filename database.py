@@ -63,6 +63,13 @@ def init_db():
     DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
     with get_connection() as conn:
         conn.executescript(SCHEMA)
+        # Migrate: add topic classification columns if missing
+        cursor = conn.execute("PRAGMA table_info(questions)")
+        existing_cols = {row['name'] for row in cursor.fetchall()}
+        for col in ('topics', 'question_types', 'heuristics', 'confidence', 'needs_review'):
+            if col not in existing_cols:
+                col_type = 'REAL' if col == 'confidence' else ('INTEGER DEFAULT 0' if col == 'needs_review' else 'TEXT')
+                conn.execute(f"ALTER TABLE questions ADD COLUMN {col} {col_type}")
     print(f"Database initialized at {DATABASE_PATH}")
 
 
@@ -171,8 +178,14 @@ def get_questions(
     paper_section: Optional[str] = None,
     marks: Optional[int] = None,
     topic_tag: Optional[str] = None,
+    topics: Optional[List[str]] = None,
+    heuristics: Optional[List[str]] = None,
+    needs_review: Optional[bool] = None,
 ) -> List[Dict[str, Any]]:
-    """Query questions with filters."""
+    """Query questions with filters.
+
+    Topic/heuristic filtering uses OR within a category and AND across.
+    """
     query = "SELECT * FROM questions WHERE 1=1"
     params = []
 
@@ -191,6 +204,9 @@ def get_questions(
     if topic_tag:
         query += " AND topic_tags LIKE ?"
         params.append(f"%{topic_tag}%")
+    if needs_review is not None:
+        query += " AND needs_review = ?"
+        params.append(1 if needs_review else 0)
 
     # Sort by school, year, then section ASCENDING (P1A→P1B→P2), then question number
     query += """ ORDER BY school, year,
@@ -204,7 +220,21 @@ def get_questions(
 
     with get_connection() as conn:
         rows = conn.execute(query, params).fetchall()
-        return [_row_to_dict(row) for row in rows]
+        questions = [_row_to_dict(row) for row in rows]
+
+    # Python-side filtering for JSON list fields (OR within, AND across)
+    if topics:
+        questions = [
+            q for q in questions
+            if any(t in (q.get('topics') or []) for t in topics)
+        ]
+    if heuristics:
+        questions = [
+            q for q in questions
+            if any(h in (q.get('heuristics') or []) for h in heuristics)
+        ]
+
+    return questions
 
 
 def get_all_schools() -> List[str]:
@@ -235,11 +265,26 @@ def get_statistics() -> Dict[str, Any]:
             "SELECT marks, COUNT(*) as count FROM questions GROUP BY marks ORDER BY marks"
         ).fetchall()
 
+        # Tagging stats (columns may not exist in older DBs)
+        tagged_count = 0
+        review_count = 0
+        try:
+            tagged_count = conn.execute(
+                "SELECT COUNT(*) as count FROM questions WHERE topics IS NOT NULL AND topics != ''"
+            ).fetchone()["count"]
+            review_count = conn.execute(
+                "SELECT COUNT(*) as count FROM questions WHERE needs_review = 1"
+            ).fetchone()["count"]
+        except Exception:
+            pass
+
         return {
             "total_questions": total,
             "by_school": {row["school"]: row["count"] for row in by_school},
             "by_section": {row["paper_section"]: row["count"] for row in by_section},
             "by_marks": {row["marks"]: row["count"] for row in by_marks},
+            "tagged_count": tagged_count,
+            "review_count": review_count,
         }
 
 
@@ -402,6 +447,15 @@ def _row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
         d["options"] = json.loads(d["options"])
     if d.get("topic_tags"):
         d["topic_tags"] = json.loads(d["topic_tags"])
+    # Parse topic classification fields
+    for field in ('topics', 'question_types', 'heuristics'):
+        if d.get(field):
+            try:
+                d[field] = json.loads(d[field])
+            except (json.JSONDecodeError, TypeError):
+                pass
+    # Normalize needs_review to bool
+    d['needs_review'] = bool(d.get('needs_review', 0))
     return d
 
 

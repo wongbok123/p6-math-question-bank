@@ -97,6 +97,10 @@ def _question_to_doc(question: Dict[str, Any]) -> Dict[str, Any]:
         doc['options'] = json.dumps(doc['options'])
     if doc.get('topic_tags') and isinstance(doc['topic_tags'], list):
         doc['topic_tags'] = json.dumps(doc['topic_tags'])
+    # Serialize topic classification fields
+    for field in ('topics', 'question_types', 'heuristics'):
+        if doc.get(field) and isinstance(doc[field], list):
+            doc[field] = json.dumps(doc[field])
     # Add timestamp
     doc['updated_at'] = firestore.SERVER_TIMESTAMP
     return doc
@@ -117,6 +121,13 @@ def _doc_to_question(doc) -> Dict[str, Any]:
             data['topic_tags'] = json.loads(data['topic_tags'])
         except json.JSONDecodeError:
             pass
+    # Parse topic classification fields
+    for field in ('topics', 'question_types', 'heuristics'):
+        if data.get(field) and isinstance(data[field], str):
+            try:
+                data[field] = json.loads(data[field])
+            except json.JSONDecodeError:
+                pass
     return data
 
 
@@ -198,8 +209,15 @@ def get_questions(
     paper_section: Optional[str] = None,
     marks: Optional[int] = None,
     topic_tag: Optional[str] = None,
+    topics: Optional[List[str]] = None,
+    heuristics: Optional[List[str]] = None,
+    needs_review: Optional[bool] = None,
 ) -> List[Dict[str, Any]]:
-    """Query questions with filters."""
+    """Query questions with filters.
+
+    Topic/heuristic filtering uses OR within a category (matches ANY
+    of the selected values) and AND across categories (must pass all).
+    """
     db = get_db()
 
     query = db.collection('questions')
@@ -216,9 +234,27 @@ def get_questions(
     docs = query.stream()
     questions = [_doc_to_question(doc) for doc in docs]
 
-    # Filter by topic_tag in Python (Firestore doesn't support array-contains on JSON string)
+    # Filter by legacy topic_tag
     if topic_tag:
         questions = [q for q in questions if topic_tag in str(q.get('topic_tags', ''))]
+
+    # Filter by topics (OR: question has ANY of the selected topics)
+    if topics:
+        questions = [
+            q for q in questions
+            if any(t in (q.get('topics') or []) for t in topics)
+        ]
+
+    # Filter by heuristics (OR within)
+    if heuristics:
+        questions = [
+            q for q in questions
+            if any(h in (q.get('heuristics') or []) for h in heuristics)
+        ]
+
+    # Filter by needs_review flag
+    if needs_review is not None:
+        questions = [q for q in questions if q.get('needs_review') == needs_review]
 
     # Sort: P1A -> P1B -> P2, then by question_num
     section_order = {'P1A': 1, 'P1B': 2, 'P2': 3}
@@ -257,6 +293,8 @@ def get_statistics() -> Dict[str, Any]:
     by_school = {}
     by_section = {}
     by_marks = {}
+    tagged_count = 0
+    review_count = 0
 
     for doc in docs:
         data = doc.to_dict()
@@ -268,11 +306,20 @@ def get_statistics() -> Dict[str, Any]:
         by_section[section] = by_section.get(section, 0) + 1
         by_marks[marks] = by_marks.get(marks, 0) + 1
 
+        # Count tagged questions (topics field populated)
+        topics_val = data.get('topics')
+        if topics_val:
+            tagged_count += 1
+        if data.get('needs_review'):
+            review_count += 1
+
     return {
         'total_questions': len(docs),
         'by_school': by_school,
         'by_section': by_section,
         'by_marks': by_marks,
+        'tagged_count': tagged_count,
+        'review_count': review_count,
     }
 
 
@@ -345,6 +392,41 @@ def update_question_text(
     }
     if main_context is not None:
         update_data['main_context'] = main_context
+
+    try:
+        doc_ref.update(update_data)
+        return True
+    except Exception:
+        return False
+
+
+def update_topic_tags(
+    question_id: str,
+    topics: Optional[List[str]] = None,
+    heuristics: Optional[List[str]] = None,
+    confidence: Optional[float] = None,
+    needs_review: bool = False,
+) -> bool:
+    """Update topic classification fields for a question.
+
+    Args:
+        question_id: Firestore document ID (e.g., 'School_2025_P2_6_a')
+        topics: List of topic tags
+        heuristics: List of heuristic tags
+        confidence: AI confidence score 0.0-1.0
+        needs_review: Whether this question needs human review
+    """
+    db = get_db()
+    doc_ref = db.collection('questions').document(question_id)
+
+    update_data = {'updated_at': firestore.SERVER_TIMESTAMP}
+    if topics is not None:
+        update_data['topics'] = json.dumps(topics)
+    if heuristics is not None:
+        update_data['heuristics'] = json.dumps(heuristics)
+    if confidence is not None:
+        update_data['confidence'] = confidence
+    update_data['needs_review'] = needs_review
 
     try:
         doc_ref.update(update_data)
