@@ -19,8 +19,8 @@
 - [x] **Topic Tagging Taxonomy**: 18 topics + 15 heuristics defined, aligned to MOE syllabus (v0.9)
 - [x] **Topic Tagging Pipeline**: Gemini-powered auto-tagging with fuzzy matching (v0.8)
 - [x] **Topic Tagging UI**: Multi-select filters, colored tag pills, pagination (v0.8)
-- [ ] **Topic Tagging QA**: Review heuristic tags on P2 questions (in progress)
-- [ ] **Heuristics Glossary Page**: Frontend page displaying glossary (pending)
+- [ ] **Topic Tagging QA**: Review heuristic tags on P2 questions (1 needs review)
+- [x] **Heuristics Glossary Page**: Frontend page with badges, callouts, illustrations (v0.9)
 - [ ] **Historical Data**: Extract 2023 and 2024 papers (Phase 3)
 
 ---
@@ -42,9 +42,9 @@
 **Pipeline**: `tag_topics.py` — Gemini Vision auto-tags each question with topics (1-2) and heuristics (0-3). Fuzzy matching corrects near-misses. Confidence < 0.7 flagged for review.
 
 **Current progress**:
-- 30 calibration questions tagged and manually reviewed
-- ~165 P2 questions tagged (heuristic review in progress)
-- Remaining ~430 questions to be tagged after QA pass
+- All 624 questions tagged (624/624, 0 failures)
+- 1 question flagged for review (confidence < 0.7)
+- Heuristics consolidated from 26 → 15 (v0.9)
 
 **Two-pass workflow**:
 1. `python tag_topics.py --limit 30` — calibrate on small batch
