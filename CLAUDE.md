@@ -102,11 +102,9 @@ python3 fix_questions.py --school "School Name" --renumber P2_0 P2_8
 - **Heuristics filter pills**: orange (`#f59e0b`) — matching heuristic tags
 - Uses `:nth-child(2 of :has())` CSS selector to differentiate; blue fallback for older browsers
 
-#### Navigation Label Rename
-- Renamed `ui/app.py` → `ui/Question_Bank.py`
-- Streamlit sidebar navigation now shows "Question Bank" instead of "app"
-- Launch command: `streamlit run ui/Question_Bank.py`
-- Streamlit Cloud main file path updated to `ui/Question_Bank.py`
+#### Navigation Label Override
+- CSS override changes sidebar navigation label from "app" to "Question Bank"
+- File remains `ui/app.py` for Streamlit Cloud compatibility
 
 ---
 
@@ -282,7 +280,7 @@ python3 verify_and_solve.py --pdf "file.pdf" --answer-pages 37-42
 └─────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────┐
-│ 3. VIEW (streamlit run ui/Question_Bank.py)                        │
+│ 3. VIEW (streamlit run ui/app.py)                                  │
 │    Browse questions, filter by school/section, show answers        │
 │    Displays: "Q6(a)", "Q6(b)" with context + part-specific text    │
 └─────────────────────────────────────────────────────────────────────┘
@@ -315,7 +313,7 @@ python3 gemini_pipeline.py --pdf "2025-P6-Maths-Prelim Exam-School.pdf" --pages 
 python3 verify_and_solve.py --pdf "2025-P6-Maths-Prelim Exam-School.pdf" --answer-pages 33-38
 
 # Step 3: Launch viewer
-streamlit run ui/Question_Bank.py
+streamlit run ui/app.py
 
 #=============================================================================
 # ALTERNATIVE: Direct solving (no answer key)
@@ -445,7 +443,7 @@ P6 Bank/
 ├── utils/
 │   └── gemini_client.py  # Gemini API client + prompts
 ├── ui/
-│   ├── Question_Bank.py  # Streamlit main page: viewer, edit mode, add question, topic filters
+│   ├── app.py            # Streamlit main page: viewer, edit mode, add question, topic filters
 │   └── pages/
 │       └── 1_Heuristics_Glossary.py  # Heuristics glossary page
 ├── pdfs/                 # Input PDFs (not committed)
@@ -504,7 +502,7 @@ The app now uses **Firebase Firestore** for persistent storage:
 3. Click "New app"
 4. Select repo: `wongbok123/p6-math-question-bank`
 5. Branch: `main`
-6. Main file path: `ui/Question_Bank.py`
+6. Main file path: `ui/app.py`
 7. **Add Secrets** (Settings → Secrets):
    - Copy contents from `firebase-key.json` into secrets as `[firebase]` section
    - See `.streamlit/secrets.toml.example` for format

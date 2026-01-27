@@ -139,6 +139,14 @@ def main():
     section[data-testid="stSidebar"] :nth-child(2 of :has([data-testid="stMultiSelect"])) [data-baseweb="tag"] {
         background-color: #f59e0b !important;
     }
+    /* Rename "app" nav label to "Question Bank" */
+    [data-testid="stSidebarNav"] li:first-child span {
+        font-size: 0;
+    }
+    [data-testid="stSidebarNav"] li:first-child span::before {
+        content: "Question Bank";
+        font-size: 14px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
