@@ -42,6 +42,7 @@ try:
             update_topic_tags,
             upload_image_bytes,
             get_image_url,
+            delete_question,
         )
         USING_FIREBASE = True
     else:
@@ -62,6 +63,7 @@ except Exception as e:
     upload_image_bytes = None
     get_image_url = None
     update_topic_tags = None
+    delete_question = None
 
 # Directory for uploaded solution images (local fallback)
 SOLUTIONS_DIR = Path(__file__).parent.parent / "output" / "images" / "solutions"
@@ -554,8 +556,8 @@ def main():
                         key=f"heuristics_{q['id']}"
                     )
 
-                    # Save button
-                    col_save, col_status = st.columns([1, 2])
+                    # Save and Delete buttons
+                    col_save, col_delete, col_status = st.columns([1, 1, 1])
                     with col_save:
                         if st.button("Save", key=f"save_{q['id']}"):
                             success = True
@@ -696,6 +698,35 @@ def main():
                                 st.rerun()
                             else:
                                 st.error("Failed to save")
+
+                    with col_delete:
+                        # Two-click delete: first click shows confirmation, second deletes
+                        confirm_key = f"confirm_delete_{q['id']}"
+                        if st.session_state.get(confirm_key):
+                            st.warning("Click again to confirm")
+                            if st.button("Confirm Delete", key=f"do_delete_{q['id']}", type="primary"):
+                                if delete_question:
+                                    ok = delete_question(
+                                        q['school'], q['year'], q['paper_section'],
+                                        q['question_num'], q.get('part_letter') or None
+                                    )
+                                    if ok:
+                                        st.success("Deleted!")
+                                        st.session_state.pop(confirm_key, None)
+                                        cached_get_questions.clear()
+                                        cached_get_statistics.clear()
+                                        st.rerun()
+                                    else:
+                                        st.error("Delete failed")
+                                else:
+                                    st.error("Delete not available (SQLite mode)")
+                            if st.button("Cancel", key=f"cancel_delete_{q['id']}"):
+                                st.session_state.pop(confirm_key, None)
+                                st.rerun()
+                        else:
+                            if st.button("Delete", key=f"delete_{q['id']}", type="secondary"):
+                                st.session_state[confirm_key] = True
+                                st.rerun()
 
             # Show PDF reference info on hover/detail
             if q.get("pdf_page_num"):
