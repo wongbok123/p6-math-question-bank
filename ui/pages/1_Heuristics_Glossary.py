@@ -81,6 +81,14 @@ PAGE_CSS = """
     margin: 14px 0 !important;
     border-radius: 0 6px 6px 0 !important;
 }
+/* Rename "app" nav label to "Question Bank" */
+[data-testid="stSidebarNav"] li:first-child span {
+    font-size: 0;
+}
+[data-testid="stSidebarNav"] li:first-child span::before {
+    content: "Question Bank";
+    font-size: 14px;
+}
 </style>
 """
 
