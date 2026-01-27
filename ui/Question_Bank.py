@@ -43,6 +43,7 @@ try:
             upload_image_bytes,
             get_image_url,
             delete_question,
+            insert_question,
         )
         USING_FIREBASE = True
     else:
@@ -64,6 +65,7 @@ except Exception as e:
     get_image_url = None
     update_topic_tags = None
     delete_question = None
+    insert_question = None
 
 # Directory for uploaded solution images (local fallback)
 SOLUTIONS_DIR = Path(__file__).parent.parent / "output" / "images" / "solutions"
@@ -119,6 +121,26 @@ def main():
     )
 
     st.title(f"{UI_PAGE_ICON} {UI_PAGE_TITLE}")
+
+    # Custom CSS: match sidebar filter pills to question tag styling
+    st.markdown("""
+    <style>
+    /* All sidebar multiselect pills: rounded, white text, blue default */
+    section[data-testid="stSidebar"] [data-baseweb="tag"] {
+        background-color: #3b82f6 !important;
+        border-radius: 12px !important;
+    }
+    section[data-testid="stSidebar"] [data-baseweb="tag"] span,
+    section[data-testid="stSidebar"] [data-baseweb="tag"] svg {
+        color: white !important;
+        fill: white !important;
+    }
+    /* Heuristics (second sidebar multiselect) - orange */
+    section[data-testid="stSidebar"] :nth-child(2 of :has([data-testid="stMultiSelect"])) [data-baseweb="tag"] {
+        background-color: #f59e0b !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     # Initialize database if needed
     try:
@@ -320,6 +342,118 @@ def main():
     start_idx = (current_page - 1) * QUESTIONS_PER_PAGE
     end_idx = start_idx + QUESTIONS_PER_PAGE
     page_questions = questions[start_idx:end_idx]
+
+    # ── Add New Question (edit mode only) ──────────────────────────────
+    if edit_mode and insert_question:
+        with st.expander("+ Add New Question"):
+            with st.form("add_question_form"):
+                st.markdown("**New Question Details**")
+
+                add_col1, add_col2, add_col3 = st.columns(3)
+                with add_col1:
+                    add_school = st.selectbox(
+                        "School",
+                        options=schools if schools else [],
+                        key="add_school",
+                    )
+                with add_col2:
+                    add_year = st.number_input(
+                        "Year", min_value=2020, max_value=2030,
+                        value=2025, key="add_year",
+                    )
+                with add_col3:
+                    add_section = st.selectbox(
+                        "Paper Section",
+                        options=["P1A", "P1B", "P2"],
+                        index=2,
+                        key="add_section",
+                    )
+
+                add_col4, add_col5, add_col6 = st.columns(3)
+                with add_col4:
+                    add_q_num = st.number_input(
+                        "Question Number", min_value=1, max_value=30,
+                        value=1, key="add_q_num",
+                    )
+                with add_col5:
+                    add_part = st.text_input(
+                        "Part Letter (blank, a, b, c)",
+                        value="",
+                        key="add_part",
+                    )
+                with add_col6:
+                    add_marks = st.number_input(
+                        "Marks", min_value=1, max_value=10,
+                        value=2, key="add_marks",
+                    )
+
+                add_question_text = st.text_area(
+                    "Question Text *",
+                    height=100,
+                    key="add_question_text",
+                )
+                add_main_context = st.text_area(
+                    "Main Context (shared stem for multi-part)",
+                    height=80,
+                    key="add_main_context",
+                )
+
+                add_answer = st.text_input("Answer", key="add_answer")
+                add_worked = st.text_area(
+                    "Worked Solution",
+                    height=100,
+                    key="add_worked",
+                )
+
+                add_topics = st.multiselect(
+                    "Topics",
+                    options=TOPICS,
+                    default=[],
+                    key="add_topics",
+                    format_func=_topic_label,
+                )
+                add_heuristics = st.multiselect(
+                    "Heuristics",
+                    options=HEURISTICS,
+                    default=[],
+                    key="add_heuristics",
+                )
+
+                add_submitted = st.form_submit_button("Add Question")
+                if add_submitted:
+                    if not add_school:
+                        st.error("School is required.")
+                    elif not add_question_text.strip():
+                        st.error("Question text is required.")
+                    else:
+                        try:
+                            part = add_part.strip().lower() or None
+                            doc_id = insert_question(
+                                school=add_school,
+                                year=int(add_year),
+                                paper_section=add_section,
+                                question_num=int(add_q_num),
+                                marks=int(add_marks),
+                                latex_text=add_question_text.strip(),
+                                image_path="",
+                                main_context=add_main_context.strip() or None,
+                                answer=add_answer.strip() or None,
+                                worked_solution=add_worked.strip() or None,
+                                part_letter=part,
+                            )
+                            if (add_topics or add_heuristics) and update_topic_tags:
+                                update_topic_tags(
+                                    question_id=doc_id,
+                                    topics=add_topics or [],
+                                    heuristics=add_heuristics or [],
+                                )
+                            st.success(f"Question added! (ID: {doc_id})")
+                            cached_get_questions.clear()
+                            cached_get_statistics.clear()
+                            cached_get_schools.clear()
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to add question: {e}")
 
     # ── Display questions ─────────────────────────────────────────────
     for i, q in enumerate(page_questions):
