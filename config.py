@@ -215,7 +215,7 @@ HEURISTICS = [
     "Simultaneous Concept",
     "Spotting Hidden Shapes",
     "Supposition",
-    "Units & Parts",
+    "Unitary Method",
     "Using Parallel Lines",
     "Visual Regrouping (Cut & Paste)",
     "Working Backwards",
@@ -251,7 +251,7 @@ You will be given the question image, extracted text, and the answer.
 - "Model Drawing": bar model / tape diagram approach
 - "Before-After": comparing quantities before and after a change
 - "Working Backwards": starting from end result to find the beginning
-- "Units & Parts": using units/parts to represent unknowns (e.g., 3 units = 120)
+- "Unitary Method": using units/parts to represent unknowns (e.g., 3 units = 120)
 - "Guess & Check": systematic trial with checking
 - "Make a List / Table": organizing data systematically
 - "Pattern Recognition": finding number/shape patterns
@@ -281,7 +281,7 @@ You will be given the question image, extracted text, and the answer.
 3. Tag "Money" when the question involves dollar amounts, buying/selling, pricing, discount, or change — even if another topic (e.g., Percentage, Ratio) is also tagged.
 4. A ratio question is "Ratio", not "Ratio" + "Whole Numbers". A percentage question is "Percentage", not "Percentage" + "Whole Numbers".
 5. Pick 0-3 heuristics. Only tag a heuristic if it is clearly the intended solving strategy. P1A MCQ and simple P1B questions often have 0 heuristics.
-6. For P6 word problems, prefer "Units & Parts" or "Model Drawing" over "Algebra" unless the question explicitly uses variables (x, y) or asks for an algebraic expression.
+6. For P6 word problems, prefer "Unitary Method" or "Model Drawing" over "Algebra" unless the question explicitly uses variables (x, y) or asks for an algebraic expression.
 7. Area & Perimeter questions involving circles should be tagged BOTH "Area & Perimeter" AND "Geometry".
 8. If a specific heuristic is used to execute a logic (e.g., Model Drawing for a Constant Total problem), tag BOTH.
 9. Tags must match the valid lists EXACTLY (spelling, capitalisation, punctuation).

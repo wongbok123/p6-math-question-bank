@@ -36,7 +36,7 @@
 
 **Taxonomy** (aligned to MOE P1-P6 syllabus):
 - **18 topics**: Algebra, Area & Perimeter, Data Analysis (Average), Data Analysis (Graphs & Tables), Decimals, Fractions, Geometry, Measurement, Money, Number Properties, Patterns & Sequences, Percentage, Rate, Ratio, Speed, Time, Volume, Whole Numbers
-- **26 heuristics**: All Items Changed, Before-After, Boomerang & Rugby, Branching, Constant Difference, Constant Total, Equal Portions, Excess & Shortage, Folded Shapes, Gap & Overlap, Guess & Check, Make a List / Table, Model Drawing, One Item Unchanged, Pattern Recognition, Proportionality, Quantity x Value, Remainder Concept, Repeated Items, Simultaneous Concept, Spotting Hidden Shapes, Supposition, Units & Parts, Using Parallel Lines, Visual Regrouping (Cut & Paste), Working Backwards
+- **26 heuristics**: All Items Changed, Before-After, Boomerang & Rugby, Branching, Constant Difference, Constant Total, Equal Portions, Excess & Shortage, Folded Shapes, Gap & Overlap, Guess & Check, Make a List / Table, Model Drawing, One Item Unchanged, Pattern Recognition, Proportionality, Quantity x Value, Remainder Concept, Repeated Items, Simultaneous Concept, Spotting Hidden Shapes, Supposition, Unitary Method, Using Parallel Lines, Visual Regrouping (Cut & Paste), Working Backwards
 - Full glossary with examples: `HEURISTICS_GLOSSARY.md`
 
 **Pipeline**: `tag_topics.py` — Gemini Vision auto-tags each question with topics (1-2) and heuristics (0-3). Fuzzy matching corrects near-misses. Confidence < 0.7 flagged for review.
@@ -387,7 +387,7 @@ CREATE TABLE questions (
     question_diagram TEXT,            -- For question diagram images
     topic_tags TEXT,                  -- JSON array (legacy)
     topics TEXT,                      -- JSON array of topic tags (e.g., ["Ratio", "Money"])
-    heuristics TEXT,                  -- JSON array of heuristic tags (e.g., ["Units & Parts"])
+    heuristics TEXT,                  -- JSON array of heuristic tags (e.g., ["Unitary Method"])
     confidence REAL,                  -- AI classification confidence (0.0-1.0)
     needs_review INTEGER DEFAULT 0,  -- 1 if confidence < 0.7
     created_at TIMESTAMP,

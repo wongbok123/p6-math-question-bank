@@ -315,7 +315,7 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 
 ---
 
-## Units & Parts
+## Unitary Method
 
 **What it is:** Assigning "units" or "parts" to unknown quantities, then solving by finding the value of 1 unit. Similar to algebra but using the language of units.
 
