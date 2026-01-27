@@ -21,6 +21,8 @@
 - [x] **Topic Tagging UI**: Multi-select filters, colored tag pills, pagination (v0.8)
 - [ ] **Topic Tagging QA**: Review heuristic tags on P2 questions (1 needs review)
 - [x] **Heuristics Glossary Page**: Frontend page with badges, callouts, illustrations (v0.9)
+- [x] **Add Question UI**: Add new questions from edit mode with full form (v1.0)
+- [x] **Sidebar Filter Styling**: Sidebar filter pills match tag pill colors (v1.0)
 - [ ] **Historical Data**: Extract 2023 and 2024 papers (Phase 3)
 
 ---
@@ -86,7 +88,29 @@ python3 fix_questions.py --school "School Name" --renumber P2_0 P2_8
 
 ---
 
-### Recent: Topic Tagging (v0.8) - January 2025
+### Recent: UI Enhancements (v1.0) - January 2025
+
+#### Add New Question from UI
+- **"+ Add New Question" expander** appears at the top of the question list when edit mode is enabled
+- Full form with all fields: School, Year, Paper Section, Question Number, Part Letter, Marks, Question Text, Main Context, Answer, Worked Solution, Topics, Heuristics
+- Uses `st.form()` to batch inputs and avoid premature reruns
+- Validates required fields (school, question text), inserts via `insert_question()`, applies topic tags, clears caches, and reruns
+
+#### Sidebar Filter Pill Styling
+- Custom CSS injected to match sidebar filter pills to question tag styling
+- **Topics filter pills**: blue (`#3b82f6`) — matching topic tags
+- **Heuristics filter pills**: orange (`#f59e0b`) — matching heuristic tags
+- Uses `:nth-child(2 of :has())` CSS selector to differentiate; blue fallback for older browsers
+
+#### Navigation Label Rename
+- Renamed `ui/app.py` → `ui/Question_Bank.py`
+- Streamlit sidebar navigation now shows "Question Bank" instead of "app"
+- Launch command: `streamlit run ui/Question_Bank.py`
+- Streamlit Cloud main file path updated to `ui/Question_Bank.py`
+
+---
+
+### Previous: Topic Tagging (v0.8) - January 2025
 
 #### Taxonomy Design
 - **18 topics** aligned to MOE P1-P6 syllabus (sorted alphabetically in config.py)
@@ -258,7 +282,7 @@ python3 verify_and_solve.py --pdf "file.pdf" --answer-pages 37-42
 └─────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────┐
-│ 3. VIEW (streamlit run ui/app.py)                                  │
+│ 3. VIEW (streamlit run ui/Question_Bank.py)                        │
 │    Browse questions, filter by school/section, show answers        │
 │    Displays: "Q6(a)", "Q6(b)" with context + part-specific text    │
 └─────────────────────────────────────────────────────────────────────┘
@@ -291,7 +315,7 @@ python3 gemini_pipeline.py --pdf "2025-P6-Maths-Prelim Exam-School.pdf" --pages 
 python3 verify_and_solve.py --pdf "2025-P6-Maths-Prelim Exam-School.pdf" --answer-pages 33-38
 
 # Step 3: Launch viewer
-streamlit run ui/app.py
+streamlit run ui/Question_Bank.py
 
 #=============================================================================
 # ALTERNATIVE: Direct solving (no answer key)
@@ -421,7 +445,9 @@ P6 Bank/
 ├── utils/
 │   └── gemini_client.py  # Gemini API client + prompts
 ├── ui/
-│   └── app.py            # Streamlit viewer with edit mode + topic filters
+│   ├── Question_Bank.py  # Streamlit main page: viewer, edit mode, add question, topic filters
+│   └── pages/
+│       └── 1_Heuristics_Glossary.py  # Heuristics glossary page
 ├── pdfs/                 # Input PDFs (not committed)
 ├── output/               # Local data (images backed up to Firebase)
 │   ├── p6_questions.db   # SQLite database (local backup)
@@ -478,7 +504,7 @@ The app now uses **Firebase Firestore** for persistent storage:
 3. Click "New app"
 4. Select repo: `wongbok123/p6-math-question-bank`
 5. Branch: `main`
-6. Main file path: `ui/app.py`
+6. Main file path: `ui/Question_Bank.py`
 7. **Add Secrets** (Settings → Secrets):
    - Copy contents from `firebase-key.json` into secrets as `[firebase]` section
    - See `.streamlit/secrets.toml.example` for format
@@ -562,7 +588,10 @@ The hybrid approach solves the answer key matching problem:
 
 ### UI/UX
 - [x] Add question filtering by topic (v0.8)
-- [ ] Add heuristics glossary page
+- [x] Add heuristics glossary page (v0.9)
+- [x] Add new question from UI in edit mode (v1.0)
+- [x] Sidebar filter pills styled to match tag colors (v1.0)
+- [x] Navigation label renamed from "app" to "Question Bank" (v1.0)
 - [ ] Add export to PDF/Word functionality
 - [ ] Add batch processing UI
 - [ ] Add answer verification dashboard
