@@ -21,15 +21,20 @@ A question can have **0-3 heuristics**. Simple P1A MCQs and straightforward comp
 
 ### Sub-type: One Item Unchanged
 
-In a before-after ratio problem, one quantity does not change. Make that item's units the same in both the before and after ratios to solve.
+In a before-after problem, the quantity of one item stays the same while others change. The unchanged item becomes the anchor for solving. In ratio problems, make the unchanged item's units equal in both the before and after ratios.
 
-**Example:**
+**Example (ratio):**
 > The ratio of Ali's money to Ben's money was 5:4. After Ali spent $60, the ratio became 5:8. How much money did Ben have?
 >
 > Ben's money is unchanged. Before: A:B = 5:4. After: A:B = 5:8.
 > Make Ben's units the same: Before = 5:4 = 10:8. After = 5:8.
 > Ali's change: 10 units → 5 units = 5 units = $60. 1 unit = $12.
 > Ben = 8 units = **$96**
+
+**Example (non-ratio):**
+> A shop had 120 apples and 80 oranges. After selling some apples, the number of apples became twice the number of oranges. How many apples were sold?
+>
+> Oranges unchanged = 80. After: apples = 2 × 80 = 160? That's more than 120, so re-read — apples became half of oranges: 80 ÷ 2 = 40. Sold = 120 − 40 = **80 apples**
 
 ### Sub-type: All Items Changed
 
@@ -120,7 +125,7 @@ Two quantities change (one increases, the other decreases), but their *total* st
 
 **What it is:** A fraction/percentage/decimal of one quantity equals a fraction/percentage/decimal of another. This generalises "Equal Fractions" to include percentages and decimals.
 
-**When to tag:** The question states that a portion of A equals a portion of B (e.g., "2/3 of Ali's money = 3/4 of Ben's money", or "40% of X = 25% of Y").
+**When to tag:** Look for keywords like **"is the same as"** or **"is equal to"** connecting a fraction/percentage/decimal of one item to a fraction/percentage/decimal of another (e.g., "2/3 of Ali's money is the same as 3/4 of Ben's money", or "40% of X is equal to 25% of Y").
 
 **Example:**
 > 2/3 of Ali's money = 3/4 of Ben's money. Ali has $36. How much does Ben have?
@@ -147,7 +152,10 @@ Two quantities change (one increases, the other decreases), but their *total* st
 
 ## Pattern Recognition
 
-**What it is:** Identifying a repeating or growing pattern in numbers, shapes, or sequences, then extending it to find the answer.
+**What it is:** Identifying a repeating or growing pattern in numbers, shapes, or sequences, then extending it to find the answer. Common PSLE number pattern types include:
+- Constant difference or consecutive numbers (e.g., +3, +3, +3)
+- Square numbers (1, 4, 9, 16, 25, ...)
+- Triangle numbers (1, 3, 6, 10, 15, ...)
 
 **When to tag:** The question shows a sequence and asks for the nth term or a continuation.
 
@@ -161,20 +169,27 @@ Two quantities change (one increases, the other decreases), but their *total* st
 
 ## Quantity × Value
 
-**What it is:** Given the total quantity and total value of mixed items (each with a known unit value), use a structured table — quantity × unit value = total value — to find how many of each type.
+**What it is:** Items have different unit values — not necessarily monetary. The "value" can be price per item, legs per animal, wheels per vehicle, candies per child, etc. Use a structured table (quantity × unit value = total value) to organise the information.
 
-**When to tag:** The question involves mixed items with different unit values (e.g., 20-cent and 50-cent coins), gives a total quantity and total value, and asks for the breakdown.
+**When to tag:** The question involves mixed items with different unit values and provides **one** total (either total quantity or total value). You use the table to compute the unknown total. If the question gives **both** totals and asks for the breakdown, that is a **Supposition** problem (which may also use a Quantity × Value table as its setup).
 
 **Example:**
-> A box has 20-cent and 50-cent coins. There are 15 coins with a total value of $4.80. How many 50-cent coins are there?
+> Ali bought 3 pens at $5 each and 4 erasers at $2 each. How much did he spend altogether?
 >
-> | Type | Qty | Value each | Total |
+> | Item | Qty | Value each | Total |
 > |------|-----|-----------|-------|
-> | 20c  | x   | 20c       | 20x   |
-> | 50c  | 15−x| 50c       | 50(15−x)|
-> | **Total** | 15 | | 480c |
+> | Pens | 3 | $5 | $15 |
+> | Erasers | 4 | $2 | $8 |
+> | **Total** | 7 | | **$23** |
+
+**Example (non-monetary):**
+> A farm has 5 cars and 8 motorcycles. How many wheels are there in total?
 >
-> 20x + 50(15−x) = 480 → x = 7. So 50c coins = **8**
+> | Vehicle | Qty | Wheels each | Total |
+> |---------|-----|------------|-------|
+> | Cars | 5 | 4 | 20 |
+> | Motorcycles | 8 | 2 | 16 |
+> | **Total** | 13 | | **36** |
 
 ---
 

@@ -249,7 +249,7 @@ You will be given the question image, extracted text, and the answer.
 - "Supposition": "Suppose all are X, then adjust..." approach — also covers guess-and-check (systematic trial) and excess-and-shortage (comparing two distribution scenarios)
 - "Simultaneous Concept": two unknowns, two conditions
 - "Repeated Items": a common item appears in two different ratios — make its units consistent across both before combining (e.g., A:B = 2:3 and B:C = 4:5, make B the same)
-- "Quantity × Value": given total quantity and total value of mixed items, use a structured table (quantity × unit value = total value) to find the breakdown
+- "Quantity × Value": items with different unit values (price, legs, wheels, etc.) organised in a quantity × unit value = total value table. Tag when ONE total is given and the table computes the other. If BOTH totals are given and the question asks for the breakdown, that is "Supposition" (which may use a QxV table as setup)
 - "Boomerang & Rugby": composite area/perimeter using boomerang (quadrant removed from square) or half-rugby (triangle removed from quadrant)
 - "Spatial Reasoning": perceiving or manipulating shapes — includes folded shapes (paper folding, preserved lengths/angles), gap & overlap (total = A + B − overlap), spotting hidden shapes (embedded triangles/rectangles), and visual regrouping / cut & paste (rearranging parts to simplify area/perimeter)
 - "Using Parallel Lines": using properties of parallel lines (alternate angles, corresponding angles) to bridge disjointed parts of a figure

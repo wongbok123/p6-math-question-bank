@@ -140,7 +140,7 @@ def render_body(name: str, body: str):
         for filename, caption in ILLUSTRATIONS[name]:
             img_path = IMAGES_DIR / filename
             if img_path.exists():
-                st.image(str(img_path), caption=caption, use_container_width=True)
+                st.image(str(img_path), caption=caption, use_column_width=True)
 
     # Render main body (What it is, When to tag, Example)
     st.markdown(main_body)
