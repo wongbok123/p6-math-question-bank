@@ -36,10 +36,10 @@ In a before-after ratio problem, one quantity does not change. Make that item's 
 All quantities in a before-after problem change by different amounts. You cannot hold anything constant, so you must set up a working table tracking each quantity's before and after values to find new relationships.
 
 **Example:**
-> Ali, Ben, and Charlie had money in the ratio 2:3:5. After Ali gave $40 to Ben and Ben gave $20 to Charlie, they had equal amounts. How much did they have altogether?
+> Ali, Ben, and Charlie had money in the ratio 8:3:1. After Ali gave $200 to Ben and Ben gave $150 to Charlie, all three had equal amounts. How much did they have altogether?
 >
-> Before: 2u, 3u, 5u. After: 2u−40, 3u+40−20, 5u+20. All equal.
-> 2u − 40 = 3u + 20 → solve for u. Total = 10u.
+> Before: 8u, 3u, 1u. After: 8u−200, 3u+200−150 = 3u+50, 1u+150. All equal.
+> 8u − 200 = 3u + 50 → 5u = 250 → u = 50. Total = 12u = 12 × 50 = **$600**
 
 ---
 
@@ -59,9 +59,9 @@ All quantities in a before-after problem change by different amounts. You cannot
 
 ## Branching
 
-**What it is:** Using tree diagrams or systematic branching to count possibilities, track outcomes, or process sequential steps. Common in probability, combinatorics, and remainder problems.
+**What it is:** Processing a sequence of steps where each step operates on the result of the previous one. In P6 word problems this most commonly appears as the **Remainder Concept** — taking a fraction of a quantity, then a fraction of the remainder, and so on. Can also involve tree diagrams or systematic counting.
 
-**When to tag:** The problem involves counting arrangements, combinations, probability paths, sequential fraction-of-remainder steps, or systematic enumeration.
+**When to tag:** The problem involves **multiple sequential steps** where each step depends on what remains from the previous one (e.g., "spent 1/3, then spent 1/4 of the remainder, then..."). Do **not** tag for a single operation like "Ali spent 1/3 of his money" — that is just a straightforward fraction calculation, not branching.
 
 **Example:**
 > A coin is tossed 3 times. How many possible outcomes are there?

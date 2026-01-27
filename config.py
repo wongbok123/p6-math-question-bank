@@ -243,7 +243,7 @@ You will be given the question image, extracted text, and the answer.
 - "Working Backwards": starting from end result to find the beginning
 - "Unitary Method": using units/parts to represent unknowns (e.g., 3 units = 120) — also covers direct/inverse proportionality (scaling up/down, more workers = less time)
 - "Pattern Recognition": finding number/shape patterns
-- "Branching": tree diagrams, systematic counting, probability trees — also covers remainder concept (fractions of remainders, e.g., "spent 1/3, then 1/4 of the remainder") and systematic listing/tabulation
+- "Branching": sequential multi-step processing where each step depends on the previous result — primarily the remainder concept in P6 (e.g., "spent 1/3, then 1/4 of the remainder"). Also covers tree diagrams and systematic listing. Only tag when there are MULTIPLE sequential steps, NOT for a single fraction/spending operation
 - "Constant Quantity": an invariant quantity persists through a change — either a constant difference (e.g., age gap never changes) or a constant total (e.g., transfer problems where the sum stays the same)
 - "Equal Portions": fraction/percentage/decimal of A = fraction/percentage/decimal of B (equating portions of different wholes)
 - "Supposition": "Suppose all are X, then adjust..." approach — also covers guess-and-check (systematic trial) and excess-and-shortage (comparing two distribution scenarios)
