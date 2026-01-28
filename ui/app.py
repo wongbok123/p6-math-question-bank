@@ -741,13 +741,13 @@ def main():
                                 st.session_state.pop(k, None)
                             # Increment uploader key to reset file uploader widget
                             st.session_state.add_q_uploader_key += 1
-                            st.success(f"Question added! (ID: {doc_id})")
                             cached_get_questions.clear()
                             cached_get_statistics.clear()
                             cached_get_schools.clear()
-                            st.rerun()
                         except Exception as e:
                             st.error(f"Failed to add question: {e}")
+                        else:
+                            st.rerun()
 
             # Cancel button (outside form so it works independently)
             if st.button("Cancel", key="add_q_cancel"):
