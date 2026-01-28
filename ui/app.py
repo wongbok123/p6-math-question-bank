@@ -96,9 +96,12 @@ def _get_gemini_api_key() -> str | None:
 GEMINI_API_KEY = _get_gemini_api_key()
 
 
-def transcribe_screenshot(image_bytes: bytes) -> dict | None:
-    """Send a screenshot to Gemini Vision and return extracted fields as a dict."""
-    import json
+def transcribe_screenshot(image_bytes: bytes) -> dict | str:
+    """Send a screenshot to Gemini Vision and return extracted fields as a dict.
+
+    Returns dict on success, or an error string on failure.
+    """
+    import json as _json
     from PIL import Image
     import io
     from utils.gemini_client import GeminiClient
@@ -108,7 +111,7 @@ def transcribe_screenshot(image_bytes: bytes) -> dict | None:
         pil_image = Image.open(io.BytesIO(image_bytes))
         result = client.extract_from_image(pil_image, SCREENSHOT_TRANSCRIPTION_PROMPT)
         if not result.success:
-            return None
+            return f"Gemini API error: {result.error or 'unknown'}"
         raw = result.raw_response.strip()
         # Strip markdown code fences if present
         if raw.startswith("```"):
@@ -120,16 +123,19 @@ def transcribe_screenshot(image_bytes: bytes) -> dict | None:
         start = raw.find("{")
         end = raw.rfind("}") + 1
         if start == -1 or end == 0:
-            return None
-        return json.loads(raw[start:end])
-    except Exception:
-        return None
+            return f"No JSON found in response: {raw[:200]}"
+        return _json.loads(raw[start:end])
+    except Exception as e:
+        return f"Transcription error: {e}"
 
 
 def classify_question(image_bytes: bytes | None, question_text: str,
-                      main_context: str, answer: str, section: str) -> dict | None:
-    """Classify a question's topics and heuristics using Gemini Vision."""
-    import json
+                      main_context: str, answer: str, section: str) -> dict | str:
+    """Classify a question's topics and heuristics using Gemini Vision.
+
+    Returns dict on success, or an error string on failure.
+    """
+    import json as _json
     from utils.gemini_client import GeminiClient
 
     prompt = TOPIC_CLASSIFICATION_PROMPT.format(
@@ -153,7 +159,7 @@ def classify_question(image_bytes: bytes | None, question_text: str,
                 prompt,
             )
         if not result.success:
-            return None
+            return f"Gemini API error: {result.error or 'unknown'}"
         raw = result.raw_response.strip()
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
@@ -163,14 +169,14 @@ def classify_question(image_bytes: bytes | None, question_text: str,
         start = raw.find("{")
         end = raw.rfind("}") + 1
         if start == -1 or end == 0:
-            return None
-        data = json.loads(raw[start:end])
+            return f"No JSON found in response: {raw[:200]}"
+        data = _json.loads(raw[start:end])
         # Validate against taxonomy
         data["topics"] = [t for t in (data.get("topics") or []) if t in TOPICS]
         data["heuristics"] = [h for h in (data.get("heuristics") or []) if h in HEURISTICS]
         return data
-    except Exception:
-        return None
+    except Exception as e:
+        return f"Classification error: {e}"
 
 
 # Directory for uploaded solution images (local fallback)
@@ -496,13 +502,13 @@ def main():
                     if st.button("Transcribe with AI", disabled=st.session_state.add_q_image_bytes is None):
                         with st.spinner("Transcribing screenshot..."):
                             result = transcribe_screenshot(st.session_state.add_q_image_bytes)
-                        if result:
+                        if isinstance(result, dict):
                             st.session_state.add_q_transcription = result
                             st.session_state.add_q_apply_transcription = True
                             st.success("Transcription complete — review the pre-filled fields below.")
                             st.rerun()
                         else:
-                            st.error("Transcription failed. Fill in the fields manually.")
+                            st.error(f"Transcription failed: {result}")
                 with btn_col2:
                     can_tag = bool(tx.get("question_text") or st.session_state.add_q_image_bytes)
                     if st.button("Tag Topics & Heuristics", disabled=not can_tag):
@@ -514,14 +520,16 @@ def main():
                                 answer=tx.get("answer") or "",
                                 section=tx.get("paper_section") or "",
                             )
-                        if tag_result and (tag_result.get("topics") or tag_result.get("heuristics")):
+                        if isinstance(tag_result, dict) and (tag_result.get("topics") or tag_result.get("heuristics")):
                             st.session_state.add_q_ai_tags = tag_result
                             st.session_state.add_q_apply_tags = True
                             tags_summary = ", ".join(tag_result.get("topics", []) + tag_result.get("heuristics", []))
                             st.success(f"Tagged: {tags_summary}")
                             st.rerun()
+                        elif isinstance(tag_result, str):
+                            st.error(f"Classification failed: {tag_result}")
                         else:
-                            st.error("Classification failed. Select topics manually.")
+                            st.error("Classification returned no topics or heuristics.")
 
                 st.divider()
 
