@@ -848,7 +848,11 @@ def main():
                 if q.get("options"):
                     st.markdown("**Options:**")
                     for letter, text in q["options"].items():
-                        st.markdown(f"({letter}) {text}")
+                        # Wrap LaTeX content (contains backslash) in $...$ for rendering
+                        if '\\' in text:
+                            st.markdown(f"({letter}) ${text}$")
+                        else:
+                            st.markdown(f"({letter}) {text}")
 
                 # Diagram description
                 if q.get("diagram_description"):
