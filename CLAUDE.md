@@ -93,17 +93,20 @@ python3 fix_questions.py --school "School Name" --renumber P2_0 P2_8
 
 #### AI Screenshot Transcription for Add Question Form
 - **Two-step flow**: Upload a screenshot of a math question, click "Transcribe with AI", then review/edit pre-filled fields before submitting
-- Screenshot upload + Transcribe button live **outside** `st.form()` (Streamlit forms cannot update widget defaults dynamically); transcribed data stored in `st.session_state` and read as form defaults
+- Screenshot upload + Transcribe button live **outside** `st.form()` (Streamlit forms cannot update widget defaults dynamically)
+- Transcribed data written directly to widget session state keys using **apply flags** — Streamlit ignores `value=`/`index=` params when widget keys already exist in `st.session_state`, so values must be written to keys before the form renders
 - `SCREENSHOT_TRANSCRIPTION_PROMPT` in `config.py` — returns JSON with `question_text`, `main_context`, `question_num`, `part_letter`, `marks`, `answer`, `paper_section`, `options`, `diagram_description`
 - `transcribe_screenshot()` in `ui/app.py` — sends PIL image to Gemini via `GeminiClient.extract_from_image()`, parses JSON response
 - `_get_gemini_api_key()` checks env var → `.env` file → Streamlit secrets; transcription UI hidden when no key is available
 - On submit, uploaded screenshot is stored in Firebase Storage as `images/questions/{filename}` and its URL saved to `image_path`
+- `diagram_description` extracted by AI and saved silently (no form field — AI-only, not human-editable)
 - Transcription state cleared after successful insert to prevent stale data
-- **Graceful degradation**: without API key the form works exactly as before; on API failure users fill fields manually
+- **Error reporting**: actual Gemini API errors displayed in UI (previously silently swallowed)
+- **Graceful degradation**: without API key the form works exactly as before; on API failure users see specific error message
 
-#### AI Topic Tagging in Add Question Form
-- **"Tag Topics with AI"** button alongside "Transcribe with AI" — classifies topics & heuristics using Gemini Vision + `TOPIC_CLASSIFICATION_PROMPT`
-- Results pre-fill the Topics and Heuristics multiselects; user reviews before submitting
+#### AI Topic & Heuristic Tagging in Add Question Form
+- **"Tag Topics & Heuristics"** button alongside "Transcribe with AI" — classifies topics & heuristics using Gemini Vision + `TOPIC_CLASSIFICATION_PROMPT`
+- Results pre-fill the Topics and Heuristics multiselects via session state apply flags; user reviews before submitting
 - `classify_question()` in `ui/app.py` — validates returned tags against taxonomy
 
 #### MCQ Options Support
@@ -111,15 +114,21 @@ python3 fix_questions.py --school "School Name" --renumber P2_0 P2_8
 - Parsed and saved to `options` field on submit
 
 #### Add Question UX Improvements
-- **Cancel button** — clears all fields, uploaded image, and transcription state
-- **Form defaults from sidebar filters** — School and Paper Section match current filter selection
-- **Form reset on submit** — all fields and file uploader clear after successful add
+- **Cancel button** — clears all fields (including selectboxes, numbers, multiselects), uploaded image, and transcription state
+- **Form defaults from sidebar filters** — School and Paper Section default to current sidebar filter on first render (via session state)
+- **Form reset on submit** — all widget keys popped from session state so fields reset completely on rerun
 - **P1B auto-normalization** — user enters paper number (e.g. Q16); `question_num` auto-computed as `paper_num - 15` for P1B, `pdf_question_num` stores the original
 - **File upload limit** — set to 5 MB (was Streamlit default 200 MB)
 
 #### Sort Order Fix
 - Questions now sort by **year → school → paper section → question number → part letter**
 - Uses `pdf_question_num` (original paper numbering) when available, falling back to `question_num`
+
+#### Streamlit Widget Pre-Population Pattern
+When dynamically updating form widget values (e.g. from AI transcription), you **cannot** use `value=`/`index=`/`default=` parameters — Streamlit ignores these once the widget key exists in `st.session_state`. Instead:
+1. Set an apply flag (`st.session_state.add_q_apply_transcription = True`) when new data arrives
+2. Before the form renders, check the flag, write values to widget keys (`st.session_state.add_question_text = ...`), and reset the flag
+3. Widget declarations use static defaults (e.g. `value=""`) as fallbacks for first render only
 
 ---
 
