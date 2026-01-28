@@ -209,6 +209,7 @@ def get_questions(
         params.append(1 if needs_review else 0)
 
     # Sort by year, school, then section ASCENDING (P1A→P1B→P2), then question number
+    # Use pdf_question_num (original numbering) when available, else question_num
     query += """ ORDER BY year, school,
         CASE paper_section
             WHEN 'P1A' THEN 1
@@ -216,7 +217,7 @@ def get_questions(
             WHEN 'P2' THEN 3
             ELSE 4
         END,
-        question_num, COALESCE(part_letter, '')"""
+        COALESCE(pdf_question_num, question_num), COALESCE(part_letter, '')"""
 
     with get_connection() as conn:
         rows = conn.execute(query, params).fetchall()

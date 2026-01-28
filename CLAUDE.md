@@ -101,6 +101,26 @@ python3 fix_questions.py --school "School Name" --renumber P2_0 P2_8
 - Transcription state cleared after successful insert to prevent stale data
 - **Graceful degradation**: without API key the form works exactly as before; on API failure users fill fields manually
 
+#### AI Topic Tagging in Add Question Form
+- **"Tag Topics with AI"** button alongside "Transcribe with AI" — classifies topics & heuristics using Gemini Vision + `TOPIC_CLASSIFICATION_PROMPT`
+- Results pre-fill the Topics and Heuristics multiselects; user reviews before submitting
+- `classify_question()` in `ui/app.py` — validates returned tags against taxonomy
+
+#### MCQ Options Support
+- Editable JSON text area for MCQ options, pre-filled from transcription
+- Parsed and saved to `options` field on submit
+
+#### Add Question UX Improvements
+- **Cancel button** — clears all fields, uploaded image, and transcription state
+- **Form defaults from sidebar filters** — School and Paper Section match current filter selection
+- **Form reset on submit** — all fields and file uploader clear after successful add
+- **P1B auto-normalization** — user enters paper number (e.g. Q16); `question_num` auto-computed as `paper_num - 15` for P1B, `pdf_question_num` stores the original
+- **File upload limit** — set to 5 MB (was Streamlit default 200 MB)
+
+#### Sort Order Fix
+- Questions now sort by **year → school → paper section → question number → part letter**
+- Uses `pdf_question_num` (original paper numbering) when available, falling back to `question_num`
+
 ---
 
 ### Previous: UI Enhancements (v1.0) - January 2025

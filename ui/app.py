@@ -663,11 +663,19 @@ def main():
                                 except _json.JSONDecodeError:
                                     pass
 
+                            # User enters the paper number (e.g. 16 for P1B Q16).
+                            # For P1B, normalize: question_num = paper_num - 15
+                            paper_num = int(add_q_num)
+                            if add_section == "P1B" and paper_num > 15:
+                                internal_num = paper_num - 15
+                            else:
+                                internal_num = paper_num
+
                             doc_id = insert_question(
                                 school=add_school,
                                 year=int(add_year),
                                 paper_section=add_section,
-                                question_num=int(add_q_num),
+                                question_num=internal_num,
                                 marks=int(add_marks),
                                 latex_text=add_question_text.strip(),
                                 image_path=img_path,
@@ -677,6 +685,7 @@ def main():
                                 worked_solution=add_worked.strip() or None,
                                 part_letter=part,
                                 options=parsed_options,
+                                pdf_question_num=paper_num,
                             )
                             if (add_topics or add_heuristics) and update_topic_tags:
                                 update_topic_tags(
