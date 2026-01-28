@@ -16,6 +16,7 @@ from config import (
     UI_PAGE_TITLE, UI_PAGE_ICON, UI_LAYOUT, PAPER_SECTIONS, SECTION_FULL_NAMES,
     TOPICS, HEURISTICS, SCREENSHOT_TRANSCRIPTION_PROMPT, TOPIC_CLASSIFICATION_PROMPT,
 )
+from auth import check_authentication, show_logout_button
 
 # Display label overrides for topics (canonical name → UI label)
 TOPIC_DISPLAY = {
@@ -232,6 +233,9 @@ def main():
         layout=UI_LAYOUT,
     )
 
+    # Site-wide password protection
+    check_authentication()
+
     st.title(f"{UI_PAGE_ICON} {UI_PAGE_TITLE}")
 
     # Custom CSS: match sidebar filter pills to question tag styling
@@ -350,6 +354,8 @@ def main():
             st.session_state.add_q_apply_transcription = False
         if "add_q_apply_tags" not in st.session_state:
             st.session_state.add_q_apply_tags = False
+        if "add_q_form_key" not in st.session_state:
+            st.session_state.add_q_form_key = 0
 
         if not st.session_state.edit_mode_unlocked:
             password_input = st.text_input("Enter password to edit", type="password", key="edit_password")
@@ -365,6 +371,11 @@ def main():
             if st.button("Lock Edit Mode"):
                 st.session_state.edit_mode_unlocked = False
                 st.rerun()
+
+        st.divider()
+
+        # Logout button
+        show_logout_button()
 
         st.divider()
 
@@ -567,7 +578,7 @@ def main():
                 st.session_state.add_section = base_section
 
             # ── Form (reads defaults from transcription) ─────────────
-            with st.form("add_question_form"):
+            with st.form(f"add_question_form_{st.session_state.add_q_form_key}"):
                 if tx:
                     st.info("Fields pre-filled from AI transcription. Review and edit before submitting.")
 
@@ -741,6 +752,8 @@ def main():
                                 st.session_state.pop(k, None)
                             # Increment uploader key to reset file uploader widget
                             st.session_state.add_q_uploader_key += 1
+                            # Increment form key to create fresh form instance (fixes reset bug)
+                            st.session_state.add_q_form_key += 1
                             cached_get_questions.clear()
                             cached_get_statistics.clear()
                             cached_get_schools.clear()
@@ -765,6 +778,8 @@ def main():
                 ]:
                     st.session_state.pop(k, None)
                 st.session_state.add_q_uploader_key += 1
+                # Increment form key to create fresh form instance (fixes reset bug)
+                st.session_state.add_q_form_key += 1
                 st.rerun()
 
     # ── Display questions ─────────────────────────────────────────────

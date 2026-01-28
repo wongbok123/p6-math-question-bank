@@ -13,6 +13,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from config import HEURISTICS, UI_PAGE_ICON
 
+# Add ui directory to path for auth import
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from auth import check_authentication, show_logout_button
+
 GLOSSARY_PATH = Path(__file__).parent.parent.parent / "HEURISTICS_GLOSSARY.md"
 
 # ── Visual anchor icons ───────────────────────────────────────────────────────
@@ -179,8 +183,15 @@ def main():
         layout="wide",
     )
 
+    # Site-wide password protection
+    check_authentication()
+
     # Inject CSS for example callout styling
     st.markdown(PAGE_CSS, unsafe_allow_html=True)
+
+    # Sidebar with logout button
+    with st.sidebar:
+        show_logout_button()
 
     st.title(f"{UI_PAGE_ICON} Heuristics Glossary")
     st.markdown(
