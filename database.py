@@ -208,8 +208,8 @@ def get_questions(
         query += " AND needs_review = ?"
         params.append(1 if needs_review else 0)
 
-    # Sort by school, year, then section ASCENDING (P1A→P1B→P2), then question number
-    query += """ ORDER BY school, year,
+    # Sort by year, school, then section ASCENDING (P1A→P1B→P2), then question number
+    query += """ ORDER BY year, school,
         CASE paper_section
             WHEN 'P1A' THEN 1
             WHEN 'P1B' THEN 2

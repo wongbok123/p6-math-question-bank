@@ -256,11 +256,11 @@ def get_questions(
     if needs_review is not None:
         questions = [q for q in questions if q.get('needs_review') == needs_review]
 
-    # Sort: P1A -> P1B -> P2, then by question_num
+    # Sort: year -> school -> section (P1A→P1B→P2) -> question_num -> part_letter
     section_order = {'P1A': 1, 'P1B': 2, 'P2': 3}
     questions.sort(key=lambda q: (
-        q.get('school', ''),
         q.get('year', 0),
+        q.get('school', ''),
         section_order.get(q.get('paper_section', ''), 4),
         q.get('question_num', 0),
         q.get('part_letter', '')

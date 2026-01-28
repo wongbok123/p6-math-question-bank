@@ -23,6 +23,7 @@
 - [x] **Heuristics Glossary Page**: Frontend page with badges, callouts, illustrations (v0.9)
 - [x] **Add Question UI**: Add new questions from edit mode with full form (v1.0)
 - [x] **Sidebar Filter Styling**: Sidebar filter pills match tag pill colors (v1.0)
+- [x] **Screenshot Transcription**: AI-powered screenshot upload + auto-fill in Add Question form (v1.1)
 - [ ] **Historical Data**: Extract 2023 and 2024 papers (Phase 3)
 
 ---
@@ -88,7 +89,21 @@ python3 fix_questions.py --school "School Name" --renumber P2_0 P2_8
 
 ---
 
-### Recent: UI Enhancements (v1.0) - January 2025
+### Recent: Screenshot Transcription (v1.1) - January 2025
+
+#### AI Screenshot Transcription for Add Question Form
+- **Two-step flow**: Upload a screenshot of a math question, click "Transcribe with AI", then review/edit pre-filled fields before submitting
+- Screenshot upload + Transcribe button live **outside** `st.form()` (Streamlit forms cannot update widget defaults dynamically); transcribed data stored in `st.session_state` and read as form defaults
+- `SCREENSHOT_TRANSCRIPTION_PROMPT` in `config.py` — returns JSON with `question_text`, `main_context`, `question_num`, `part_letter`, `marks`, `answer`, `paper_section`, `options`, `diagram_description`
+- `transcribe_screenshot()` in `ui/app.py` — sends PIL image to Gemini via `GeminiClient.extract_from_image()`, parses JSON response
+- `_get_gemini_api_key()` checks env var → `.env` file → Streamlit secrets; transcription UI hidden when no key is available
+- On submit, uploaded screenshot is stored in Firebase Storage as `images/questions/{filename}` and its URL saved to `image_path`
+- Transcription state cleared after successful insert to prevent stale data
+- **Graceful degradation**: without API key the form works exactly as before; on API failure users fill fields manually
+
+---
+
+### Previous: UI Enhancements (v1.0) - January 2025
 
 #### Add New Question from UI
 - **"+ Add New Question" expander** appears at the top of the question list when edit mode is enabled

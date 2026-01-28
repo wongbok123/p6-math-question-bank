@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config import (
     UI_PAGE_TITLE, UI_PAGE_ICON, UI_LAYOUT, PAPER_SECTIONS, SECTION_FULL_NAMES,
-    TOPICS, HEURISTICS,
+    TOPICS, HEURISTICS, SCREENSHOT_TRANSCRIPTION_PROMPT, TOPIC_CLASSIFICATION_PROMPT,
 )
 
 # Display label overrides for topics (canonical name → UI label)
@@ -66,6 +66,111 @@ except Exception as e:
     update_topic_tags = None
     delete_question = None
     insert_question = None
+
+# ── Gemini API key detection (for screenshot transcription) ───────────
+def _get_gemini_api_key() -> str | None:
+    """Check env var, .env file, and Streamlit secrets for a Gemini API key."""
+    # 1. Environment variable
+    key = os.environ.get("GEMINI_API_KEY")
+    if key:
+        return key
+    # 2. .env file in project root
+    env_path = Path(__file__).parent.parent / ".env"
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if line.startswith("GEMINI_API_KEY="):
+                val = line.split("=", 1)[1].strip().strip("'\"")
+                if val:
+                    return val
+    # 3. Streamlit secrets
+    try:
+        key = st.secrets.get("GEMINI_API_KEY")
+        if key:
+            return key
+    except Exception:
+        pass
+    return None
+
+GEMINI_API_KEY = _get_gemini_api_key()
+
+
+def transcribe_screenshot(image_bytes: bytes) -> dict | None:
+    """Send a screenshot to Gemini Vision and return extracted fields as a dict."""
+    import json
+    from PIL import Image
+    import io
+    from utils.gemini_client import GeminiClient
+
+    try:
+        client = GeminiClient(api_key=GEMINI_API_KEY)
+        pil_image = Image.open(io.BytesIO(image_bytes))
+        result = client.extract_from_image(pil_image, SCREENSHOT_TRANSCRIPTION_PROMPT)
+        if not result.success:
+            return None
+        raw = result.raw_response.strip()
+        # Strip markdown code fences if present
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+            if raw.endswith("```"):
+                raw = raw[:-3]
+            raw = raw.strip()
+        # Find the JSON object
+        start = raw.find("{")
+        end = raw.rfind("}") + 1
+        if start == -1 or end == 0:
+            return None
+        return json.loads(raw[start:end])
+    except Exception:
+        return None
+
+
+def classify_question(image_bytes: bytes | None, question_text: str,
+                      main_context: str, answer: str, section: str) -> dict | None:
+    """Classify a question's topics and heuristics using Gemini Vision."""
+    import json
+    from utils.gemini_client import GeminiClient
+
+    prompt = TOPIC_CLASSIFICATION_PROMPT.format(
+        few_shot_examples="(No examples provided.)",
+        question_text=question_text or "",
+        main_context=main_context or "N/A",
+        answer=answer or "N/A",
+        section=section or "",
+    )
+    try:
+        client = GeminiClient(api_key=GEMINI_API_KEY)
+        if image_bytes:
+            from PIL import Image
+            import io
+            pil_image = Image.open(io.BytesIO(image_bytes))
+            result = client.extract_from_image(pil_image, prompt)
+        else:
+            # Text-only classification (no image)
+            result = client.extract_from_image(
+                __import__('PIL.Image', fromlist=['Image']).Image.new('RGB', (1, 1)),
+                prompt,
+            )
+        if not result.success:
+            return None
+        raw = result.raw_response.strip()
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+            if raw.endswith("```"):
+                raw = raw[:-3]
+            raw = raw.strip()
+        start = raw.find("{")
+        end = raw.rfind("}") + 1
+        if start == -1 or end == 0:
+            return None
+        data = json.loads(raw[start:end])
+        # Validate against taxonomy
+        data["topics"] = [t for t in (data.get("topics") or []) if t in TOPICS]
+        data["heuristics"] = [h for h in (data.get("heuristics") or []) if h in HEURISTICS]
+        return data
+    except Exception:
+        return None
+
 
 # Directory for uploaded solution images (local fallback)
 SOLUTIONS_DIR = Path(__file__).parent.parent / "output" / "images" / "solutions"
@@ -225,6 +330,16 @@ def main():
         if "edit_mode_unlocked" not in st.session_state:
             st.session_state.edit_mode_unlocked = False
 
+        # Initialize session state for screenshot transcription
+        if "add_q_transcription" not in st.session_state:
+            st.session_state.add_q_transcription = {}
+        if "add_q_image_bytes" not in st.session_state:
+            st.session_state.add_q_image_bytes = None
+        if "add_q_ai_tags" not in st.session_state:
+            st.session_state.add_q_ai_tags = {}
+        if "add_q_uploader_key" not in st.session_state:
+            st.session_state.add_q_uploader_key = 0
+
         if not st.session_state.edit_mode_unlocked:
             password_input = st.text_input("Enter password to edit", type="password", key="edit_password")
             if st.button("Unlock Edit Mode"):
@@ -354,14 +469,72 @@ def main():
     # ── Add New Question (edit mode only) ──────────────────────────────
     if edit_mode and insert_question:
         with st.expander("+ Add New Question"):
+            tx = st.session_state.add_q_transcription  # shorthand
+
+            # ── Screenshot transcription (outside form) ──────────────
+            if GEMINI_API_KEY:
+                uploaded_screenshot = st.file_uploader(
+                    "Upload a question screenshot",
+                    type=["png", "jpg", "jpeg"],
+                    key=f"add_q_screenshot_{st.session_state.add_q_uploader_key}",
+                )
+                if uploaded_screenshot:
+                    # Persist bytes so they survive reruns
+                    st.session_state.add_q_image_bytes = uploaded_screenshot.getvalue()
+
+                # Show preview from session state (survives reruns even when uploader resets)
+                if st.session_state.add_q_image_bytes:
+                    st.image(st.session_state.add_q_image_bytes, caption="Uploaded screenshot", width=400)
+
+                btn_col1, btn_col2 = st.columns(2)
+                with btn_col1:
+                    if st.button("Transcribe with AI", disabled=st.session_state.add_q_image_bytes is None):
+                        with st.spinner("Transcribing screenshot..."):
+                            result = transcribe_screenshot(st.session_state.add_q_image_bytes)
+                        if result:
+                            st.session_state.add_q_transcription = result
+                            st.success("Transcription complete — review the pre-filled fields below.")
+                            st.rerun()
+                        else:
+                            st.error("Transcription failed. Fill in the fields manually.")
+                with btn_col2:
+                    can_tag = bool(tx.get("question_text") or st.session_state.add_q_image_bytes)
+                    if st.button("Tag Topics with AI", disabled=not can_tag):
+                        with st.spinner("Classifying topics & heuristics..."):
+                            tag_result = classify_question(
+                                image_bytes=st.session_state.add_q_image_bytes,
+                                question_text=tx.get("question_text") or "",
+                                main_context=tx.get("main_context") or "",
+                                answer=tx.get("answer") or "",
+                                section=tx.get("paper_section") or "",
+                            )
+                        if tag_result and (tag_result.get("topics") or tag_result.get("heuristics")):
+                            st.session_state.add_q_ai_tags = tag_result
+                            tags_summary = ", ".join(tag_result.get("topics", []) + tag_result.get("heuristics", []))
+                            st.success(f"Tagged: {tags_summary}")
+                            st.rerun()
+                        else:
+                            st.error("Classification failed. Select topics manually.")
+
+                st.divider()
+
+            # ── Form (reads defaults from transcription) ─────────────
             with st.form("add_question_form"):
+                if tx:
+                    st.info("Fields pre-filled from AI transcription. Review and edit before submitting.")
+
                 st.markdown("**New Question Details**")
 
                 add_col1, add_col2, add_col3 = st.columns(3)
                 with add_col1:
+                    school_opts = schools if schools else []
+                    school_idx = 0
+                    if base_school and base_school in school_opts:
+                        school_idx = school_opts.index(base_school)
                     add_school = st.selectbox(
                         "School",
-                        options=schools if schools else [],
+                        options=school_opts,
+                        index=school_idx,
                         key="add_school",
                     )
                 with add_col2:
@@ -370,10 +543,14 @@ def main():
                         value=2025, key="add_year",
                     )
                 with add_col3:
+                    # Default section from transcription, then sidebar filter
+                    section_opts = ["P1A", "P1B", "P2"]
+                    tx_section = tx.get("paper_section") or base_section
+                    section_idx = section_opts.index(tx_section) if tx_section in section_opts else 2
                     add_section = st.selectbox(
                         "Paper Section",
-                        options=["P1A", "P1B", "P2"],
-                        index=2,
+                        options=section_opts,
+                        index=section_idx,
                         key="add_section",
                     )
 
@@ -381,49 +558,72 @@ def main():
                 with add_col4:
                     add_q_num = st.number_input(
                         "Question Number", min_value=1, max_value=30,
-                        value=1, key="add_q_num",
+                        value=int(tx["question_num"]) if tx.get("question_num") else 1,
+                        key="add_q_num",
                     )
                 with add_col5:
                     add_part = st.text_input(
                         "Part Letter (blank, a, b, c)",
-                        value="",
+                        value=tx.get("part_letter") or "",
                         key="add_part",
                     )
                 with add_col6:
                     add_marks = st.number_input(
                         "Marks", min_value=1, max_value=10,
-                        value=2, key="add_marks",
+                        value=int(tx["marks"]) if tx.get("marks") else 2,
+                        key="add_marks",
                     )
 
                 add_question_text = st.text_area(
                     "Question Text *",
+                    value=tx.get("question_text") or "",
                     height=100,
                     key="add_question_text",
                 )
                 add_main_context = st.text_area(
                     "Main Context (shared stem for multi-part)",
+                    value=tx.get("main_context") or "",
                     height=80,
                     key="add_main_context",
                 )
 
-                add_answer = st.text_input("Answer", key="add_answer")
+                add_answer = st.text_input(
+                    "Answer",
+                    value=tx.get("answer") or "",
+                    key="add_answer",
+                )
+
+                # MCQ options (editable JSON) — shown when transcription detected options
+                import json as _json
+                tx_options = tx.get("options")
+                options_default = ""
+                if isinstance(tx_options, dict) and tx_options:
+                    options_default = _json.dumps(tx_options, indent=2)
+                add_options_str = st.text_area(
+                    'MCQ Options (JSON, e.g. {"A": "300", "B": "3000", ...})',
+                    value=options_default,
+                    height=80,
+                    key="add_options",
+                )
+
                 add_worked = st.text_area(
                     "Worked Solution",
                     height=100,
                     key="add_worked",
                 )
 
+                ai_tags = st.session_state.add_q_ai_tags
                 add_topics = st.multiselect(
                     "Topics",
                     options=TOPICS,
-                    default=[],
+                    default=[t for t in (ai_tags.get("topics") or []) if t in TOPICS],
                     key="add_topics",
                     format_func=_topic_label,
                 )
                 add_heuristics = st.multiselect(
                     "Heuristics",
                     options=HEURISTICS,
-                    default=[],
+                    default=[h for h in (ai_tags.get("heuristics") or []) if h in HEURISTICS],
                     key="add_heuristics",
                 )
 
@@ -436,6 +636,33 @@ def main():
                     else:
                         try:
                             part = add_part.strip().lower() or None
+                            # Upload screenshot to Firebase if available
+                            img_path = ""
+                            img_bytes = st.session_state.add_q_image_bytes
+                            if img_bytes and USING_FIREBASE and upload_image_bytes:
+                                fname = f"{add_school}_{add_year}_{add_section}_Q{add_q_num}"
+                                if part:
+                                    fname += f"_{part}"
+                                fname = fname.replace(" ", "_") + ".png"
+                                try:
+                                    img_path = upload_image_bytes(
+                                        img_bytes,
+                                        f"images/questions/{fname}",
+                                        "image/png",
+                                    )
+                                except Exception:
+                                    pass  # non-critical; image_path stays empty
+
+                            # Parse MCQ options from text area
+                            parsed_options = None
+                            if add_options_str.strip():
+                                try:
+                                    parsed_options = _json.loads(add_options_str)
+                                    if not isinstance(parsed_options, dict):
+                                        parsed_options = None
+                                except _json.JSONDecodeError:
+                                    pass
+
                             doc_id = insert_question(
                                 school=add_school,
                                 year=int(add_year),
@@ -443,11 +670,13 @@ def main():
                                 question_num=int(add_q_num),
                                 marks=int(add_marks),
                                 latex_text=add_question_text.strip(),
-                                image_path="",
+                                image_path=img_path,
+                                diagram_description=tx.get("diagram_description"),
                                 main_context=add_main_context.strip() or None,
                                 answer=add_answer.strip() or None,
                                 worked_solution=add_worked.strip() or None,
                                 part_letter=part,
+                                options=parsed_options,
                             )
                             if (add_topics or add_heuristics) and update_topic_tags:
                                 update_topic_tags(
@@ -455,6 +684,19 @@ def main():
                                     topics=add_topics or [],
                                     heuristics=add_heuristics or [],
                                 )
+                            # Clear transcription and tagging state
+                            st.session_state.add_q_transcription = {}
+                            st.session_state.add_q_image_bytes = None
+                            st.session_state.add_q_ai_tags = {}
+                            # Clear form widget keys so fields reset on rerun
+                            for k in [
+                                "add_question_text", "add_main_context",
+                                "add_answer", "add_worked", "add_options",
+                                "add_part",
+                            ]:
+                                st.session_state.pop(k, None)
+                            # Increment uploader key to reset file uploader widget
+                            st.session_state.add_q_uploader_key += 1
                             st.success(f"Question added! (ID: {doc_id})")
                             cached_get_questions.clear()
                             cached_get_statistics.clear()
@@ -462,6 +704,20 @@ def main():
                             st.rerun()
                         except Exception as e:
                             st.error(f"Failed to add question: {e}")
+
+            # Cancel button (outside form so it works independently)
+            if st.button("Cancel", key="add_q_cancel"):
+                st.session_state.add_q_transcription = {}
+                st.session_state.add_q_image_bytes = None
+                st.session_state.add_q_ai_tags = {}
+                for k in [
+                    "add_question_text", "add_main_context",
+                    "add_answer", "add_worked", "add_options",
+                    "add_part",
+                ]:
+                    st.session_state.pop(k, None)
+                st.session_state.add_q_uploader_key += 1
+                st.rerun()
 
     # ── Display questions ─────────────────────────────────────────────
     for i, q in enumerate(page_questions):

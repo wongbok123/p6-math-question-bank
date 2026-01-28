@@ -278,6 +278,32 @@ Look at the attached question image, then return ONLY valid JSON (no markdown, n
 {{"topics": [...], "heuristics": [...], "confidence": 0.0-1.0}}
 """
 
+# Screenshot transcription prompt — extracts structured fields from a single question image
+SCREENSHOT_TRANSCRIPTION_PROMPT = """You are a Singapore Primary 6 Mathematics question transcriber.
+
+Analyze this screenshot of a math question and extract the following fields as a JSON object.
+
+RULES:
+1. Transcribe the question text faithfully, using LaTeX for math expressions ($\\frac{1}{2}$, $x^2$, etc.)
+2. If the image shows a multi-part question, set main_context to the shared problem stem and question_text to the specific part visible.
+3. For MCQ questions, extract all options as a JSON object {"A": "...", "B": "...", "C": "...", "D": "..."}.
+4. If there is a diagram, describe it in detail in diagram_description.
+5. Infer paper_section from clues: MCQ with options = "P1A", short answer with "Ans:" line = "P1B", long word problems = "P2".
+6. If a field cannot be determined, use null.
+
+Return ONLY valid JSON (no markdown fences, no explanation):
+{
+  "question_text": "Full question text with LaTeX math",
+  "main_context": "Shared problem stem for multi-part questions, or null",
+  "question_num": 1,
+  "part_letter": "a or null",
+  "marks": 2,
+  "answer": "Final answer if visible, or null",
+  "paper_section": "P1A, P1B, or P2",
+  "options": {"A": "...", "B": "..."} or null,
+  "diagram_description": "Description of any diagram, or null"
+}"""
+
 # Streamlit UI settings
 UI_PAGE_TITLE = "P6 Math Question Bank"
 UI_PAGE_ICON = "📐"
