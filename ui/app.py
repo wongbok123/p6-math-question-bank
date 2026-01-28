@@ -3,6 +3,7 @@ Streamlit UI for P6 Math Question Bank viewer.
 """
 
 import re
+import json
 import streamlit as st
 from pathlib import Path
 import sys
@@ -339,6 +340,10 @@ def main():
             st.session_state.add_q_ai_tags = {}
         if "add_q_uploader_key" not in st.session_state:
             st.session_state.add_q_uploader_key = 0
+        if "add_q_apply_transcription" not in st.session_state:
+            st.session_state.add_q_apply_transcription = False
+        if "add_q_apply_tags" not in st.session_state:
+            st.session_state.add_q_apply_tags = False
 
         if not st.session_state.edit_mode_unlocked:
             password_input = st.text_input("Enter password to edit", type="password", key="edit_password")
@@ -493,13 +498,14 @@ def main():
                             result = transcribe_screenshot(st.session_state.add_q_image_bytes)
                         if result:
                             st.session_state.add_q_transcription = result
+                            st.session_state.add_q_apply_transcription = True
                             st.success("Transcription complete — review the pre-filled fields below.")
                             st.rerun()
                         else:
                             st.error("Transcription failed. Fill in the fields manually.")
                 with btn_col2:
                     can_tag = bool(tx.get("question_text") or st.session_state.add_q_image_bytes)
-                    if st.button("Tag Topics with AI", disabled=not can_tag):
+                    if st.button("Tag Topics & Heuristics", disabled=not can_tag):
                         with st.spinner("Classifying topics & heuristics..."):
                             tag_result = classify_question(
                                 image_bytes=st.session_state.add_q_image_bytes,
@@ -510,6 +516,7 @@ def main():
                             )
                         if tag_result and (tag_result.get("topics") or tag_result.get("heuristics")):
                             st.session_state.add_q_ai_tags = tag_result
+                            st.session_state.add_q_apply_tags = True
                             tags_summary = ", ".join(tag_result.get("topics", []) + tag_result.get("heuristics", []))
                             st.success(f"Tagged: {tags_summary}")
                             st.rerun()
@@ -517,6 +524,39 @@ def main():
                             st.error("Classification failed. Select topics manually.")
 
                 st.divider()
+
+            # ── Apply transcription/tags to widget keys (must happen BEFORE form) ──
+            # Streamlit ignores value=/index=/default= when the widget key
+            # already exists in session_state.  So we write directly to the
+            # keys once, right after new data arrives.
+            if st.session_state.add_q_apply_transcription and tx:
+                st.session_state.add_q_apply_transcription = False
+                st.session_state.add_question_text = tx.get("question_text") or ""
+                st.session_state.add_main_context = tx.get("main_context") or ""
+                st.session_state.add_answer = tx.get("answer") or ""
+                st.session_state.add_part = tx.get("part_letter") or ""
+                if tx.get("question_num"):
+                    st.session_state.add_q_num = int(tx["question_num"])
+                if tx.get("marks"):
+                    st.session_state.add_marks = int(tx["marks"])
+                tx_sec = tx.get("paper_section")
+                if tx_sec in ("P1A", "P1B", "P2"):
+                    st.session_state.add_section = tx_sec
+                if isinstance(tx.get("options"), dict) and tx["options"]:
+                    st.session_state.add_options = json.dumps(tx["options"], indent=2)
+
+            if st.session_state.add_q_apply_tags:
+                st.session_state.add_q_apply_tags = False
+                ai = st.session_state.add_q_ai_tags
+                if ai:
+                    st.session_state.add_topics = [t for t in (ai.get("topics") or []) if t in TOPICS]
+                    st.session_state.add_heuristics = [h for h in (ai.get("heuristics") or []) if h in HEURISTICS]
+
+            # Default school/section from sidebar filter on first render
+            if "add_school" not in st.session_state and base_school and base_school in (schools or []):
+                st.session_state.add_school = base_school
+            if "add_section" not in st.session_state and base_section and base_section in ("P1A", "P1B", "P2"):
+                st.session_state.add_section = base_section
 
             # ── Form (reads defaults from transcription) ─────────────
             with st.form("add_question_form"):
@@ -528,13 +568,9 @@ def main():
                 add_col1, add_col2, add_col3 = st.columns(3)
                 with add_col1:
                     school_opts = schools if schools else []
-                    school_idx = 0
-                    if base_school and base_school in school_opts:
-                        school_idx = school_opts.index(base_school)
                     add_school = st.selectbox(
                         "School",
                         options=school_opts,
-                        index=school_idx,
                         key="add_school",
                     )
                 with add_col2:
@@ -543,14 +579,10 @@ def main():
                         value=2025, key="add_year",
                     )
                 with add_col3:
-                    # Default section from transcription, then sidebar filter
                     section_opts = ["P1A", "P1B", "P2"]
-                    tx_section = tx.get("paper_section") or base_section
-                    section_idx = section_opts.index(tx_section) if tx_section in section_opts else 2
                     add_section = st.selectbox(
                         "Paper Section",
                         options=section_opts,
-                        index=section_idx,
                         key="add_section",
                     )
 
@@ -558,50 +590,44 @@ def main():
                 with add_col4:
                     add_q_num = st.number_input(
                         "Question Number", min_value=1, max_value=30,
-                        value=int(tx["question_num"]) if tx.get("question_num") else 1,
+                        value=1,
                         key="add_q_num",
                     )
                 with add_col5:
                     add_part = st.text_input(
                         "Part Letter (blank, a, b, c)",
-                        value=tx.get("part_letter") or "",
+                        value="",
                         key="add_part",
                     )
                 with add_col6:
                     add_marks = st.number_input(
                         "Marks", min_value=1, max_value=10,
-                        value=int(tx["marks"]) if tx.get("marks") else 2,
+                        value=2,
                         key="add_marks",
                     )
 
                 add_question_text = st.text_area(
                     "Question Text *",
-                    value=tx.get("question_text") or "",
+                    value="",
                     height=100,
                     key="add_question_text",
                 )
                 add_main_context = st.text_area(
                     "Main Context (shared stem for multi-part)",
-                    value=tx.get("main_context") or "",
+                    value="",
                     height=80,
                     key="add_main_context",
                 )
 
                 add_answer = st.text_input(
                     "Answer",
-                    value=tx.get("answer") or "",
+                    value="",
                     key="add_answer",
                 )
 
-                # MCQ options (editable JSON) — shown when transcription detected options
-                import json as _json
-                tx_options = tx.get("options")
-                options_default = ""
-                if isinstance(tx_options, dict) and tx_options:
-                    options_default = _json.dumps(tx_options, indent=2)
                 add_options_str = st.text_area(
                     'MCQ Options (JSON, e.g. {"A": "300", "B": "3000", ...})',
-                    value=options_default,
+                    value="",
                     height=80,
                     key="add_options",
                 )
@@ -612,18 +638,15 @@ def main():
                     key="add_worked",
                 )
 
-                ai_tags = st.session_state.add_q_ai_tags
                 add_topics = st.multiselect(
                     "Topics",
                     options=TOPICS,
-                    default=[t for t in (ai_tags.get("topics") or []) if t in TOPICS],
                     key="add_topics",
                     format_func=_topic_label,
                 )
                 add_heuristics = st.multiselect(
                     "Heuristics",
                     options=HEURISTICS,
-                    default=[h for h in (ai_tags.get("heuristics") or []) if h in HEURISTICS],
                     key="add_heuristics",
                 )
 
@@ -657,10 +680,10 @@ def main():
                             parsed_options = None
                             if add_options_str.strip():
                                 try:
-                                    parsed_options = _json.loads(add_options_str)
+                                    parsed_options = json.loads(add_options_str)
                                     if not isinstance(parsed_options, dict):
                                         parsed_options = None
-                                except _json.JSONDecodeError:
+                                except json.JSONDecodeError:
                                     pass
 
                             # User enters the paper number (e.g. 16 for P1B Q16).
@@ -697,11 +720,15 @@ def main():
                             st.session_state.add_q_transcription = {}
                             st.session_state.add_q_image_bytes = None
                             st.session_state.add_q_ai_tags = {}
+                            st.session_state.add_q_apply_transcription = False
+                            st.session_state.add_q_apply_tags = False
                             # Clear form widget keys so fields reset on rerun
                             for k in [
                                 "add_question_text", "add_main_context",
                                 "add_answer", "add_worked", "add_options",
-                                "add_part",
+                                "add_part", "add_school", "add_section",
+                                "add_q_num", "add_marks", "add_year",
+                                "add_topics", "add_heuristics",
                             ]:
                                 st.session_state.pop(k, None)
                             # Increment uploader key to reset file uploader widget
@@ -719,10 +746,14 @@ def main():
                 st.session_state.add_q_transcription = {}
                 st.session_state.add_q_image_bytes = None
                 st.session_state.add_q_ai_tags = {}
+                st.session_state.add_q_apply_transcription = False
+                st.session_state.add_q_apply_tags = False
                 for k in [
                     "add_question_text", "add_main_context",
                     "add_answer", "add_worked", "add_options",
-                    "add_part",
+                    "add_part", "add_school", "add_section",
+                    "add_q_num", "add_marks", "add_year",
+                    "add_topics", "add_heuristics",
                 ]:
                     st.session_state.pop(k, None)
                 st.session_state.add_q_uploader_key += 1
