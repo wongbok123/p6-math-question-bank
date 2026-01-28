@@ -635,6 +635,7 @@ The hybrid approach solves the answer key matching problem:
 - [x] Add new question from UI in edit mode (v1.0)
 - [x] Sidebar filter pills styled to match tag colors (v1.0)
 - [x] Navigation label renamed from "app" to "Question Bank" (v1.0)
+- [ ] **Edit MCQ options** — Allow editing MCQ options (A/B/C/D) in edit mode for existing questions
 - [ ] Add export to PDF/Word functionality
 - [ ] Add batch processing UI
 - [ ] Add answer verification dashboard
