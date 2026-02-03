@@ -43,7 +43,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from segmenter import QuestionSegmenter
 
 from utils.gemini_client import GeminiClient
-from database import get_questions, get_connection, update_answer
+from database import get_questions, get_connection, get_question, update_answer
 from config import PDF_DIR, IMAGES_DIR
 
 # Directory for answer key images
@@ -980,16 +980,17 @@ def process_questions(
             elif final_tag:
                 worked_solution = final_tag
 
-            update_answer(
-                school=school,
-                year=year,
-                paper_section=section,
-                question_num=qnum,
-                answer=final_answer,
-                worked_solution=worked_solution,
-                overwrite=True,
-                part_letter=part_letter,
-            )
+            # Look up question ID first
+            q = get_question(school, year, section, qnum, part_letter)
+            if q:
+                update_answer(
+                    question_id=q['id'],
+                    answer=final_answer,
+                    worked_solution=worked_solution,
+                    overwrite=True,
+                )
+            else:
+                print(f"Warning: Question not found for {school} {year} {section} Q{qnum}{part_letter or ''}")
 
         # Cleanup and rate limit
         del question_image

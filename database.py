@@ -290,36 +290,27 @@ def get_statistics() -> Dict[str, Any]:
 
 
 def update_answer(
-    school: str,
-    year: int,
-    paper_section: str,
-    question_num: int,
+    question_id: int,
     answer: str,
     worked_solution: Optional[str] = None,
     question_diagram: Optional[str] = None,
-    overwrite: bool = False,
-    part_letter: Optional[str] = None,
+    overwrite: bool = True,
 ) -> bool:
     """Update answer fields for a question.
 
     Args:
-        overwrite: If False, only update if no answer exists yet.
-                   If True, always overwrite existing answer.
-        part_letter: 'a', 'b', 'c', etc. for multi-part questions, or None/''
+        question_id: The database ID of the question
+        answer: The answer text
+        worked_solution: Optional worked solution text
+        question_diagram: Optional diagram description
+        overwrite: If False, only update if no answer exists yet (default True)
     """
     with get_connection() as conn:
-        # Use empty string for part_letter if None
-        part = part_letter or ''
-        params_base = (school, year, paper_section, question_num, part)
-
         # Check if answer already exists (unless overwrite is True)
         if not overwrite:
             existing = conn.execute(
-                """
-                SELECT answer FROM questions
-                WHERE school = ? AND year = ? AND paper_section = ? AND question_num = ? AND part_letter = ?
-                """,
-                params_base,
+                "SELECT answer FROM questions WHERE id = ?",
+                (question_id,),
             ).fetchone()
 
             if existing and existing["answer"]:
@@ -330,39 +321,33 @@ def update_answer(
             """
             UPDATE questions
             SET answer = ?, worked_solution = ?, question_diagram = ?
-            WHERE school = ? AND year = ? AND paper_section = ? AND question_num = ? AND part_letter = ?
+            WHERE id = ?
             """,
-            (answer, worked_solution, question_diagram) + params_base,
+            (answer, worked_solution, question_diagram, question_id),
         )
         return cursor.rowcount > 0
 
 
 def update_question_text(
-    school: str,
-    year: int,
-    paper_section: str,
-    question_num: int,
+    question_id: int,
     latex_text: str,
     main_context: Optional[str] = None,
-    part_letter: Optional[str] = None,
 ) -> bool:
     """Update question text fields.
 
     Args:
-        latex_text: The part-specific question text
+        question_id: The database ID of the question
+        latex_text: The question text
         main_context: Shared problem context for multi-part questions
-        part_letter: 'a', 'b', 'c', etc. for multi-part questions, or None/''
     """
     with get_connection() as conn:
-        part = part_letter or ''
         cursor = conn.execute(
             """
             UPDATE questions
             SET latex_text = ?, main_context = ?
-            WHERE school = ? AND year = ? AND paper_section = ?
-            AND question_num = ? AND part_letter = ?
+            WHERE id = ?
             """,
-            (latex_text, main_context, school, year, paper_section, question_num, part),
+            (latex_text, main_context, question_id),
         )
         return cursor.rowcount > 0
 

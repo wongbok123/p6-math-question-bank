@@ -26,7 +26,7 @@ import psutil
 sys.path.insert(0, str(Path(__file__).parent))
 
 from utils.gemini_client import GeminiClient
-from database import get_questions, update_answer, get_connection
+from database import get_questions, get_question, update_answer, get_connection
 from config import PDF_DIR, IMAGES_DIR
 
 DPI = 200
@@ -353,13 +353,16 @@ def process_answer_pages(
                         if section == "P1B" and ans.question_num > 15:
                             actual_question_num = ans.question_num - 15
 
+                        # Look up question ID first
+                        q = get_question(school, year, section, actual_question_num)
+                        if not q:
+                            continue
+
                         success = update_answer(
-                            school=school,
-                            year=year,
-                            paper_section=section,
-                            question_num=actual_question_num,
+                            question_id=q['id'],
                             answer=answer_value,
-                            worked_solution=ans.working
+                            worked_solution=ans.working,
+                            overwrite=False,
                         )
                         if success:
                             # Show the PDF question number for P1B for clarity

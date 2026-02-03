@@ -1126,26 +1126,18 @@ def main():
 
                             if answer_changed or working_changed or diagram_changed:
                                 success = update_answer(
-                                    school=q['school'],
-                                    year=q['year'],
-                                    paper_section=new_section,  # Use new section
-                                    question_num=new_q_num,     # Use new question num
+                                    question_id=q['id'],
                                     answer=new_answer,
                                     worked_solution=new_working,
                                     question_diagram=new_diagram_desc if diagram_changed else None,
-                                    part_letter=q.get('part_letter'),
                                     overwrite=True
                                 ) and success
 
                             if text_changed or context_changed:
                                 success = update_question_text(
-                                    school=q['school'],
-                                    year=q['year'],
-                                    paper_section=new_section,  # Use new section
-                                    question_num=new_q_num,     # Use new question num
+                                    question_id=q['id'],
                                     latex_text=new_question_text,
                                     main_context=new_main_context if q.get("part_letter") else None,
-                                    part_letter=q.get('part_letter')
                                 ) and success
 
                             if (topics_changed or heuristics_changed) and update_topic_tags:

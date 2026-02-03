@@ -33,7 +33,7 @@ load_dotenv()
 sys.path.insert(0, str(Path(__file__).parent))
 
 from utils.gemini_client import GeminiClient
-from database import get_connection, get_questions, update_answer, get_all_schools
+from database import get_connection, get_questions, get_question, update_answer, get_all_schools
 from config import IMAGES_DIR
 
 # Directory for answer key images
@@ -279,12 +279,16 @@ def fix_school_p1a(
                     print(" [dry-run]")
                     stats["updated"] += 1
                 else:
+                    # Look up question ID first
+                    q = get_question(school, year, 'P1A', q_num)
+                    if not q:
+                        print(" [NOT FOUND]")
+                        stats["errors"] += 1
+                        continue
+
                     # Update database
                     success = update_answer(
-                        school=school,
-                        year=year,
-                        paper_section='P1A',
-                        question_num=q_num,
+                        question_id=q['id'],
                         answer=new_answer,
                         worked_solution="[fix_p1a_mcq]",
                         overwrite=True

@@ -325,67 +325,63 @@ def get_statistics() -> Dict[str, Any]:
 
 
 def update_answer(
-    school: str,
-    year: int,
-    paper_section: str,
-    question_num: int,
+    question_id: str,
     answer: str,
     worked_solution: Optional[str] = None,
     question_diagram: Optional[str] = None,
-    overwrite: bool = False,
-    part_letter: Optional[str] = None,
+    overwrite: bool = True,
 ) -> bool:
-    """Update answer fields for a question."""
+    """Update answer fields for a question.
+
+    Args:
+        question_id: Firestore document ID (e.g., 'School_2025_P2_6_a')
+        answer: The answer text
+        worked_solution: Optional worked solution text
+        question_diagram: Optional diagram description/URL
+        overwrite: If False, won't overwrite existing answer (default True)
+    """
     db = get_db()
+    doc_ref = db.collection('questions').document(question_id)
 
-    doc_id = f"{school}_{year}_{paper_section}_{question_num}"
-    if part_letter:
-        doc_id += f"_{part_letter}"
-    doc_id = doc_id.replace(" ", "_")
+    try:
+        # Check if answer exists (unless overwrite)
+        if not overwrite:
+            doc = doc_ref.get()
+            if doc.exists:
+                existing = doc.to_dict()
+                if existing.get('answer'):
+                    return False
 
-    doc_ref = db.collection('questions').document(doc_id)
-    doc = doc_ref.get()
+        update_data = {
+            'answer': answer,
+            'updated_at': firestore.SERVER_TIMESTAMP,
+        }
+        if worked_solution is not None:
+            update_data['worked_solution'] = worked_solution
+        if question_diagram is not None:
+            update_data['question_diagram'] = question_diagram
 
-    if not doc.exists:
+        doc_ref.update(update_data)
+        return True
+    except Exception as e:
+        print(f"Firebase update_answer error for {question_id}: {e}")
         return False
-
-    # Check if answer exists (unless overwrite)
-    if not overwrite:
-        existing = doc.to_dict()
-        if existing.get('answer'):
-            return False
-
-    update_data = {
-        'answer': answer,
-        'updated_at': firestore.SERVER_TIMESTAMP,
-    }
-    if worked_solution is not None:
-        update_data['worked_solution'] = worked_solution
-    if question_diagram is not None:
-        update_data['question_diagram'] = question_diagram
-
-    doc_ref.update(update_data)
-    return True
 
 
 def update_question_text(
-    school: str,
-    year: int,
-    paper_section: str,
-    question_num: int,
+    question_id: str,
     latex_text: str,
     main_context: Optional[str] = None,
-    part_letter: Optional[str] = None,
 ) -> bool:
-    """Update question text fields."""
+    """Update question text fields.
+
+    Args:
+        question_id: Firestore document ID (e.g., 'School_2025_P2_6_a')
+        latex_text: The question text
+        main_context: Optional shared context for multi-part questions
+    """
     db = get_db()
-
-    doc_id = f"{school}_{year}_{paper_section}_{question_num}"
-    if part_letter:
-        doc_id += f"_{part_letter}"
-    doc_id = doc_id.replace(" ", "_")
-
-    doc_ref = db.collection('questions').document(doc_id)
+    doc_ref = db.collection('questions').document(question_id)
 
     update_data = {
         'latex_text': latex_text,
@@ -397,7 +393,8 @@ def update_question_text(
     try:
         doc_ref.update(update_data)
         return True
-    except Exception:
+    except Exception as e:
+        print(f"Firebase update_question_text error for {question_id}: {e}")
         return False
 
 
