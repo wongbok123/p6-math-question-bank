@@ -816,20 +816,20 @@ def main():
 
                 # Check if it's a URL (Firebase Storage)
                 if image_path_str.startswith("http"):
-                    st.image(image_path_str, use_column_width=True)
+                    st.image(image_path_str, use_container_width=True)
                 else:
                     # Handle local paths
                     image_path = Path(image_path_str) if image_path_str else None
 
                     if image_path and image_path.exists():
-                        st.image(str(image_path), use_column_width=True)
+                        st.image(str(image_path), use_container_width=True)
                     else:
                         # Try relative path from project root
                         if image_path:
                             filename = image_path.name
                             relative_path = Path(__file__).parent.parent / "output" / "images" / filename
                             if relative_path.exists():
-                                st.image(str(relative_path), use_column_width=True)
+                                st.image(str(relative_path), use_container_width=True)
                             else:
                                 st.info("Image not available on cloud")
 
@@ -877,13 +877,13 @@ def main():
 
                         # Show image from Firebase URL
                         if img_url_match:
-                            st.image(img_url_match.group(1), caption="Solution", use_column_width=True)
+                            st.image(img_url_match.group(1), caption="Solution", use_container_width=True)
                         # Or show local image
                         elif img_match:
                             img_filename = img_match.group(1)
                             img_path = SOLUTIONS_DIR / img_filename
                             if img_path.exists():
-                                st.image(str(img_path), caption="Solution", use_column_width=True)
+                                st.image(str(img_path), caption="Solution", use_container_width=True)
 
                 # Show question diagram if available
                 if q.get("question_diagram"):
@@ -893,12 +893,12 @@ def main():
 
                     with st.expander("View Question Diagram"):
                         if diag_url_match:
-                            st.image(diag_url_match.group(1), caption="Question Diagram", use_column_width=True)
+                            st.image(diag_url_match.group(1), caption="Question Diagram", use_container_width=True)
                         elif diag_img_match:
                             diag_filename = diag_img_match.group(1)
                             diag_path = SOLUTIONS_DIR / diag_filename
                             if diag_path.exists():
-                                st.image(str(diag_path), caption="Question Diagram", use_column_width=True)
+                                st.image(str(diag_path), caption="Question Diagram", use_container_width=True)
                         else:
                             # Plain text description
                             st.markdown(diagram_desc)
