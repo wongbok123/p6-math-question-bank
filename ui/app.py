@@ -910,23 +910,23 @@ def main():
                             if img_path.exists():
                                 st.image(str(img_path), caption="Solution", use_container_width=True)
 
-                # Show question diagram if available
-                if q.get("question_diagram"):
-                    diagram_desc = q["question_diagram"]
-                    diag_url_match = re.search(r'\[Diagram URL: (.+?)\]', diagram_desc)
-                    diag_img_match = re.search(r'\[Diagram Image: (.+?)\]', diagram_desc)
+            # Show question diagram if available (outside answer block so it displays even without an answer)
+            if q.get("question_diagram"):
+                diagram_desc = q["question_diagram"]
+                diag_url_match = re.search(r'\[Diagram URL: (.+?)\]', diagram_desc)
+                diag_img_match = re.search(r'\[Diagram Image: (.+?)\]', diagram_desc)
 
-                    with st.expander("View Question Diagram"):
-                        if diag_url_match:
-                            st.image(diag_url_match.group(1), caption="Question Diagram", use_container_width=True)
-                        elif diag_img_match:
-                            diag_filename = diag_img_match.group(1)
-                            diag_path = SOLUTIONS_DIR / diag_filename
-                            if diag_path.exists():
-                                st.image(str(diag_path), caption="Question Diagram", use_container_width=True)
-                        else:
-                            # Plain text description
-                            st.markdown(diagram_desc)
+                with st.expander("View Question Diagram"):
+                    if diag_url_match:
+                        st.image(diag_url_match.group(1), caption="Question Diagram", use_container_width=True)
+                    elif diag_img_match:
+                        diag_filename = diag_img_match.group(1)
+                        diag_path = SOLUTIONS_DIR / diag_filename
+                        if diag_path.exists():
+                            st.image(str(diag_path), caption="Question Diagram", use_container_width=True)
+                    else:
+                        # Plain text description
+                        st.markdown(diagram_desc)
 
             # Topic tag pills
             tag_pills = []
