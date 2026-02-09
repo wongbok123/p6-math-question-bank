@@ -16,7 +16,6 @@ from config import (
     UI_PAGE_TITLE, UI_PAGE_ICON, UI_LAYOUT, PAPER_SECTIONS, SECTION_FULL_NAMES,
     TOPICS, HEURISTICS, SCREENSHOT_TRANSCRIPTION_PROMPT, TOPIC_CLASSIFICATION_PROMPT,
 )
-from auth import check_authentication, show_logout_button
 
 # Display label overrides for topics (canonical name → UI label)
 TOPIC_DISPLAY = {
@@ -235,9 +234,6 @@ def main():
         layout=UI_LAYOUT,
     )
 
-    # Site-wide password protection
-    check_authentication()
-
     st.title(f"{UI_PAGE_ICON} {UI_PAGE_TITLE}")
 
     # Custom CSS: match sidebar filter pills to question tag styling
@@ -337,11 +333,12 @@ def main():
 
         # Edit mode with password protection
         st.header("Edit Mode")
-        EDIT_PASSWORD = "p6math2026"  # Change this to your desired password
+        EDIT_PASSWORD = "p6math2026"
+        EDIT_TOKEN = "unlocked"
 
-        # Initialize session state for edit mode
+        # Initialize session state for edit mode (check query params for persistence across refresh)
         if "edit_mode_unlocked" not in st.session_state:
-            st.session_state.edit_mode_unlocked = False
+            st.session_state.edit_mode_unlocked = st.query_params.get("edit") == EDIT_TOKEN
 
         # Initialize session state for screenshot transcription
         if "add_q_transcription" not in st.session_state:
@@ -364,6 +361,7 @@ def main():
             if st.button("Unlock Edit Mode"):
                 if password_input == EDIT_PASSWORD:
                     st.session_state.edit_mode_unlocked = True
+                    st.query_params["edit"] = EDIT_TOKEN
                     st.rerun()
                 else:
                     st.error("Incorrect password")
@@ -372,12 +370,9 @@ def main():
             edit_mode = st.checkbox("Enable Editing", value=False)
             if st.button("Lock Edit Mode"):
                 st.session_state.edit_mode_unlocked = False
+                if "edit" in st.query_params:
+                    del st.query_params["edit"]
                 st.rerun()
-
-        st.divider()
-
-        # Logout button
-        show_logout_button()
 
         st.divider()
 
