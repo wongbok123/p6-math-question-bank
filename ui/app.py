@@ -984,39 +984,68 @@ def main():
                         key=f"working_{q['id']}"
                     )
 
-                    # Image upload for worked solution
-                    st.markdown("**Or upload solution image:**")
+                    # Solution image: show existing with remove, or upload new
+                    st.markdown("**Solution Image**")
+                    sol_remove_key = f"remove_solution_{q['id']}"
+                    sol_url_match = re.search(r'\[Solution URL: (.+?)\]', q.get("worked_solution") or "")
+                    sol_img_match = re.search(r'\[Solution Image: (.+?)\]', q.get("worked_solution") or "")
+                    delete_solution = st.session_state.get(sol_remove_key, False)
+
+                    if (sol_url_match or sol_img_match) and not delete_solution:
+                        img_col, btn_col = st.columns([4, 1])
+                        with img_col:
+                            if sol_url_match:
+                                st.image(sol_url_match.group(1), caption="Current solution", width=300)
+                            elif sol_img_match:
+                                sol_path = SOLUTIONS_DIR / sol_img_match.group(1)
+                                if sol_path.exists():
+                                    st.image(str(sol_path), caption="Current solution", width=300)
+                        with btn_col:
+                            if st.button("✕", key=f"btn_rm_sol_{q['id']}", help="Remove solution image"):
+                                st.session_state[sol_remove_key] = True
+                                st.rerun()
+                    elif delete_solution:
+                        st.info("Solution image will be removed on save.")
+
                     uploaded_solution = st.file_uploader(
                         "Upload solution image",
                         type=["png", "jpg", "jpeg"],
                         key=f"upload_solution_{q['id']}"
                     )
-
                     if uploaded_solution:
-                        st.image(uploaded_solution, caption="Solution Preview", width=300)
+                        st.image(uploaded_solution, caption="New solution preview", width=300)
 
-                    # Option to delete existing solution image
-                    has_solution_img = bool(re.search(r'\[Solution (?:URL|Image): .+?\]', q.get("worked_solution") or ""))
-                    delete_solution = False
-                    if has_solution_img:
-                        delete_solution = st.checkbox("Delete solution image", key=f"del_solution_{q['id']}")
+                    # Question diagram: show existing with remove, or upload new
+                    st.markdown("**Question Diagram**")
+                    diag_remove_key = f"remove_diagram_{q['id']}"
+                    diag_val = q.get("question_diagram") or ""
+                    diag_url_match = re.search(r'\[Diagram URL: (.+?)\]', diag_val)
+                    diag_img_match = re.search(r'\[Diagram Image: (.+?)\]', diag_val)
+                    delete_diagram = st.session_state.get(diag_remove_key, False)
 
-                    # Image upload for question diagram
-                    st.markdown("**Or upload question diagram:**")
+                    if (diag_url_match or diag_img_match) and not delete_diagram:
+                        img_col, btn_col = st.columns([4, 1])
+                        with img_col:
+                            if diag_url_match:
+                                st.image(diag_url_match.group(1), caption="Current diagram", width=300)
+                            elif diag_img_match:
+                                diag_path = SOLUTIONS_DIR / diag_img_match.group(1)
+                                if diag_path.exists():
+                                    st.image(str(diag_path), caption="Current diagram", width=300)
+                        with btn_col:
+                            if st.button("✕", key=f"btn_rm_diag_{q['id']}", help="Remove question diagram"):
+                                st.session_state[diag_remove_key] = True
+                                st.rerun()
+                    elif delete_diagram:
+                        st.info("Question diagram will be removed on save.")
+
                     uploaded_diagram = st.file_uploader(
                         "Upload question diagram",
                         type=["png", "jpg", "jpeg"],
                         key=f"upload_diagram_{q['id']}"
                     )
-
                     if uploaded_diagram:
-                        st.image(uploaded_diagram, caption="Diagram Preview", width=300)
-
-                    # Option to delete existing question diagram
-                    has_diagram = bool(q.get("question_diagram"))
-                    delete_diagram = False
-                    if has_diagram:
-                        delete_diagram = st.checkbox("Delete question diagram", key=f"del_diagram_{q['id']}")
+                        st.image(uploaded_diagram, caption="New diagram preview", width=300)
 
                     st.markdown("**Question Text**")
 
@@ -1189,6 +1218,9 @@ def main():
 
                             if success:
                                 st.success("Saved!")
+                                # Clear remove flags
+                                st.session_state.pop(sol_remove_key, None)
+                                st.session_state.pop(diag_remove_key, None)
                                 # Clear cache so changes show up
                                 cached_get_questions.clear()
                                 cached_get_statistics.clear()
