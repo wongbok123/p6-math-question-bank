@@ -6,6 +6,7 @@ Replaces SQLite with Firebase Firestore for data and Firebase Storage for images
 
 import os
 import json
+import time
 import base64
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -540,7 +541,8 @@ def upload_image_bytes(image_bytes, storage_path: str, content_type: str = 'imag
 
     blob.upload_from_string(image_bytes, content_type=content_type)
     blob.make_public()
-    return blob.public_url
+    # Append cache-busting timestamp so browsers re-fetch when images are replaced
+    return f"{blob.public_url}?t={int(time.time())}"
 
 
 def get_image_url(storage_path: str) -> Optional[str]:
