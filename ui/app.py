@@ -995,6 +995,12 @@ def main():
                     if uploaded_solution:
                         st.image(uploaded_solution, caption="Solution Preview", width=300)
 
+                    # Option to delete existing solution image
+                    has_solution_img = bool(re.search(r'\[Solution (?:URL|Image): .+?\]', q.get("worked_solution") or ""))
+                    delete_solution = False
+                    if has_solution_img:
+                        delete_solution = st.checkbox("Delete solution image", key=f"del_solution_{q['id']}")
+
                     # Image upload for question diagram
                     st.markdown("**Or upload question diagram:**")
                     uploaded_diagram = st.file_uploader(
@@ -1005,6 +1011,12 @@ def main():
 
                     if uploaded_diagram:
                         st.image(uploaded_diagram, caption="Diagram Preview", width=300)
+
+                    # Option to delete existing question diagram
+                    has_diagram = bool(q.get("question_diagram"))
+                    delete_diagram = False
+                    if has_diagram:
+                        delete_diagram = st.checkbox("Delete question diagram", key=f"del_diagram_{q['id']}")
 
                     st.markdown("**Question Text**")
 
@@ -1048,6 +1060,10 @@ def main():
                             success = True
                             new_diagram_desc = q.get("question_diagram") or ""
 
+                            # Handle solution image deletion
+                            if delete_solution and not uploaded_solution:
+                                new_working = re.sub(r'\s*\[Solution (?:URL|Image): .+?\]', '', new_working).strip()
+
                             # Handle solution image upload
                             if uploaded_solution:
                                 img_filename = f"{q['school']}_{q['year']}_{q['paper_section']}_Q{q['question_num']}"
@@ -1087,6 +1103,10 @@ def main():
                                         new_working = f"{new_working}\n\n{img_ref}"
                                     else:
                                         new_working = img_ref
+
+                            # Handle diagram image deletion
+                            if delete_diagram and not uploaded_diagram:
+                                new_diagram_desc = ""
 
                             # Handle diagram image upload
                             if uploaded_diagram:
