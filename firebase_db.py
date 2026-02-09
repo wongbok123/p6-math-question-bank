@@ -177,11 +177,20 @@ def insert_question(
         'worked_solution': worked_solution,
         'question_diagram': question_diagram,
         'topic_tags': json.dumps(topic_tags) if topic_tags else None,
-        'created_at': firestore.SERVER_TIMESTAMP,
         'updated_at': firestore.SERVER_TIMESTAMP,
     }
 
-    db.collection('questions').document(doc_id).set(doc_data)
+    # Filter out None values so existing fields (e.g. question_diagram) aren't wiped
+    doc_data = {k: v for k, v in doc_data.items() if v is not None}
+
+    # Only set created_at for new documents (don't overwrite on re-insert)
+    doc_ref = db.collection('questions').document(doc_id)
+    existing = doc_ref.get()
+    if not existing.exists:
+        doc_data['created_at'] = firestore.SERVER_TIMESTAMP
+
+    # merge=True preserves existing fields not present in doc_data
+    doc_ref.set(doc_data, merge=True)
     return doc_id
 
 
@@ -604,17 +613,15 @@ def migrate_from_sqlite(sqlite_path: str, upload_images: bool = False):
         if 'id' in data:
             del data['id']
 
-        # Handle None values
-        for key, value in data.items():
-            if value is None:
-                data[key] = None
+        # Filter out None values so existing fields aren't wiped on re-migration
+        data = {k: v for k, v in data.items() if v is not None}
 
         # Ensure part_letter is string
-        if data.get('part_letter') is None:
+        if 'part_letter' not in data:
             data['part_letter'] = ''
 
         doc_ref = db.collection('questions').document(doc_id)
-        batch.set(doc_ref, data)
+        batch.set(doc_ref, data, merge=True)
         batch_count += 1
 
         # Commit batch every 500 documents

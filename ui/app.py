@@ -34,6 +34,7 @@ try:
     if USE_FIREBASE:
         from firebase_db import (
             get_questions,
+            get_question,
             get_all_schools,
             get_all_years,
             get_statistics,
@@ -68,6 +69,7 @@ except Exception as e:
     update_topic_tags = None
     delete_question = None
     insert_question = None
+    get_question = None
 
 # ── Gemini API key detection (for screenshot transcription) ───────────
 def _get_gemini_api_key() -> str | None:
@@ -678,6 +680,29 @@ def main():
                     else:
                         try:
                             part = add_part.strip().lower() or None
+                            # Check for existing question with same identity
+                            paper_num_check = int(add_q_num)
+                            if add_section == "P1B" and paper_num_check > 15:
+                                internal_num_check = paper_num_check - 15
+                            else:
+                                internal_num_check = paper_num_check
+                            existing_q = None
+                            if get_question:
+                                existing_q = get_question(
+                                    school=add_school,
+                                    year=int(add_year),
+                                    paper_section=add_section,
+                                    question_num=internal_num_check,
+                                    part_letter=part,
+                                )
+                            if existing_q:
+                                st.warning(
+                                    f"A question already exists for {add_school} {add_year} "
+                                    f"{add_section} Q{add_q_num}"
+                                    f"{'(' + part + ')' if part else ''}. "
+                                    f"Existing fields (e.g. diagrams) will be preserved; "
+                                    f"only the fields you filled in will be updated."
+                                )
                             # Upload screenshot to Firebase if available
                             img_path = ""
                             img_bytes = st.session_state.add_q_image_bytes
