@@ -1089,12 +1089,12 @@ def main():
                             success = True
                             new_diagram_desc = q.get("question_diagram") or ""
 
-                            # Handle solution image deletion
-                            if delete_solution and not uploaded_solution:
+                            # Handle solution image deletion (takes precedence over stale uploader)
+                            if delete_solution:
                                 new_working = re.sub(r'\s*\[Solution (?:URL|Image): .+?\]', '', new_working).strip()
 
-                            # Handle solution image upload
-                            if uploaded_solution:
+                            # Handle solution image upload (only if not deleting)
+                            elif uploaded_solution:
                                 img_filename = f"{q['school']}_{q['year']}_{q['paper_section']}_Q{q['question_num']}"
                                 if q.get('part_letter'):
                                     img_filename += f"_{q['part_letter']}"
@@ -1133,12 +1133,12 @@ def main():
                                     else:
                                         new_working = img_ref
 
-                            # Handle diagram image deletion
-                            if delete_diagram and not uploaded_diagram:
+                            # Handle diagram image deletion (takes precedence over stale uploader)
+                            if delete_diagram:
                                 new_diagram_desc = ""
 
-                            # Handle diagram image upload
-                            if uploaded_diagram:
+                            # Handle diagram image upload (only if not deleting)
+                            elif uploaded_diagram:
                                 diag_filename = f"{q['school']}_{q['year']}_{q['paper_section']}_Q{q['question_num']}"
                                 if q.get('part_letter'):
                                     diag_filename += f"_{q['part_letter']}"
