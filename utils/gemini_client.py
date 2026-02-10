@@ -202,11 +202,16 @@ Extract EVERY MCQ question visible. For each question:
 3. All four options A, B, C, D with their full content
 4. Describe any diagrams/figures
 
+FORMATTING RULES:
+- In question text, wrap math expressions in $...$: $\\frac{1}{2}$, $x^2$
+- In MCQ options, use RAW LaTeX WITHOUT $...$ delimiters: \\frac{3}{10} not $\\frac{3}{10}$
+- Keep currency dollar signs as-is: $30, $45.60
+
 Format each question as:
 ---
 Q[number]:
 Text: [question with $LaTeX$ math]
-A: [option A]
+A: [option A with raw LaTeX, no $ delimiters]
 B: [option B]
 C: [option C]
 D: [option D]
@@ -312,6 +317,8 @@ CRITICAL:
 - Do NOT skip any sub-parts (a), (b), (c)
 - Include the MAIN question text that provides context for all parts
 - Use LaTeX for math: $\\frac{1}{2}$, $x^2$, etc.
+- Keep currency dollar signs as-is: $30, $45.60 (do not wrap them in LaTeX)
+- For MCQ options, use raw LaTeX WITHOUT $...$ delimiters
 - Extract EVERY question visible on this page"""
 
 

@@ -286,10 +286,11 @@ Analyze this screenshot of a math question and extract the following fields as a
 RULES:
 1. Transcribe the question text faithfully, using LaTeX for math expressions ($\\frac{1}{2}$, $x^2$, etc.)
 2. If the image shows a multi-part question, set main_context to the shared problem stem and question_text to the specific part visible.
-3. For MCQ questions, extract all options as a JSON object {"A": "...", "B": "...", "C": "...", "D": "..."}.
+3. For MCQ questions, extract all options as a JSON object {"A": "...", "B": "...", "C": "...", "D": "..."}. Use RAW LaTeX in options WITHOUT $...$ delimiters (e.g. "2\\frac{3}{10} kg" not "$2\\frac{3}{10}$ kg").
 4. If there is a diagram, describe it in detail in diagram_description.
 5. Infer paper_section from clues: MCQ with options = "P1A", short answer with "Ans:" line = "P1B", long word problems = "P2".
-6. If a field cannot be determined, use null.
+6. Keep currency dollar signs as-is in all fields: $30, $45.60 (do not wrap or escape them).
+7. If a field cannot be determined, use null.
 
 Return ONLY valid JSON (no markdown fences, no explanation):
 {

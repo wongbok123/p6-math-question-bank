@@ -939,7 +939,7 @@ def main():
                         if '\\' in text:
                             st.markdown(f"({letter}) {_render_latex_option(text)}")
                         else:
-                            st.markdown(f"({letter}) {text}")
+                            st.markdown(f"({letter}) {_escape_currency_dollars(text)}")
 
                 # Diagram description
                 if q.get("diagram_description"):
@@ -988,7 +988,7 @@ def main():
                             st.image(str(diag_path), caption="Question Diagram", use_container_width=True)
                     else:
                         # Plain text description
-                        st.markdown(diagram_desc)
+                        st.markdown(_escape_currency_dollars(diagram_desc))
 
             # Topic tag pills
             tag_pills = []
