@@ -944,7 +944,7 @@ def main():
                 # Diagram description
                 if q.get("diagram_description"):
                     with st.expander("Diagram Description"):
-                        st.markdown(q["diagram_description"])
+                        st.markdown(_escape_currency_dollars(q["diagram_description"]))
 
             # Answer section - shown directly for easy verification
             if show_answers and q.get("answer"):
