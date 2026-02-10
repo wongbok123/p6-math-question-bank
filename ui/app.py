@@ -28,11 +28,51 @@ def _topic_label(name: str) -> str:
 
 
 def _escape_currency_dollars(text: str) -> str:
-    """Escape $ signs used as currency (e.g. $30) so they aren't treated as LaTeX delimiters."""
+    """Escape $ signs used as currency (e.g. $30) so they aren't treated as LaTeX delimiters.
+
+    Preserves intentional LaTeX $...$ blocks (those containing backslash
+    commands like \\frac, or short math expressions like $2w$) while
+    escaping currency dollar signs that would otherwise create false
+    LaTeX spans (e.g. "he spent $30 and saved...$27").
+    """
     if not text:
         return text
-    # $<digit> is currency, not LaTeX — escape the dollar sign
-    return re.sub(r'\$(\d)', r'\\$\1', text)
+
+    # Track character positions that belong to real LaTeX $...$ spans
+    latex_positions: set[int] = set()
+
+    def _mark(m: re.Match) -> None:
+        for pos in range(m.start(), m.end()):
+            latex_positions.add(pos)
+
+    # Pass 1: $...$ containing backslash commands — definitely LaTeX
+    for m in re.finditer(r'\$([^$]*\\[a-zA-Z][^$]*)\$', text):
+        _mark(m)
+
+    # Pass 2: short $...$ that look like math, not prose
+    for m in re.finditer(r'\$([^$]{1,50})\$', text):
+        if m.start() in latex_positions:
+            continue
+        content = m.group(1)
+        # 3+ letter words indicate prose (currency context), not math
+        if re.search(r'[a-zA-Z]{3,}', content):
+            continue
+        # Only digits, spaces, commas, periods → multiple currency amounts
+        if re.match(r'^[\d\s,.]+$', content):
+            continue
+        _mark(m)
+
+    # Pass 3: escape $ followed by a digit unless it's inside a LaTeX span
+    parts: list[str] = []
+    for i, ch in enumerate(text):
+        if (ch == '$'
+                and i not in latex_positions
+                and i + 1 < len(text)
+                and text[i + 1].isdigit()):
+            parts.append('\\$')
+        else:
+            parts.append(ch)
+    return ''.join(parts)
 
 
 def _render_latex_option(text: str) -> str:
