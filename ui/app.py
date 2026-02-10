@@ -26,6 +26,34 @@ def _topic_label(name: str) -> str:
     """Return display label for a topic name."""
     return TOPIC_DISPLAY.get(name, name)
 
+
+def _escape_currency_dollars(text: str) -> str:
+    """Escape $ signs used as currency (e.g. $30) so they aren't treated as LaTeX delimiters."""
+    if not text:
+        return text
+    # $<digit> is currency, not LaTeX — escape the dollar sign
+    return re.sub(r'\$(\d)', r'\\$\1', text)
+
+
+def _render_latex_option(text: str) -> str:
+    """Render an MCQ option that may contain LaTeX commands mixed with plain text.
+
+    Strips any stray $ delimiters already in the text, then wraps LaTeX
+    command sequences (like \\frac{3}{10}) in $...$ for inline rendering.
+    """
+    if not text:
+        return text
+    # Remove existing $ delimiters that might conflict
+    text = text.replace('$', '')
+    # Wrap LaTeX commands (with optional leading number) in $...$
+    # Matches: optional digits/decimal, optional space, backslash-command, optional {arg} groups
+    text = re.sub(
+        r'(\d*\.?\d*\s*\\[a-zA-Z]+(?:\{[^}]*\})*)',
+        r'$\1$',
+        text,
+    )
+    return text
+
 # Use Firebase if available, fallback to SQLite
 USE_FIREBASE = os.environ.get('USE_FIREBASE', 'true').lower() == 'true'
 
@@ -857,20 +885,19 @@ def main():
                 # LaTeX text - show main context first if available
                 if q.get("main_context"):
                     st.markdown("**Context:**")
-                    st.markdown(q["main_context"])
+                    st.markdown(_escape_currency_dollars(q["main_context"]))
                     st.markdown("**Part:**")
-                    st.markdown(q["latex_text"])
+                    st.markdown(_escape_currency_dollars(q["latex_text"]))
                 elif q["latex_text"]:
                     st.markdown("**Question:**")
-                    st.markdown(q["latex_text"])
+                    st.markdown(_escape_currency_dollars(q["latex_text"]))
 
                 # MCQ options
                 if q.get("options"):
                     st.markdown("**Options:**")
                     for letter, text in q["options"].items():
-                        # Wrap LaTeX content (contains backslash) in $...$ for rendering
                         if '\\' in text:
-                            st.markdown(f"({letter}) ${text}$")
+                            st.markdown(f"({letter}) {_render_latex_option(text)}")
                         else:
                             st.markdown(f"({letter}) {text}")
 
@@ -881,7 +908,7 @@ def main():
 
             # Answer section - shown directly for easy verification
             if show_answers and q.get("answer"):
-                st.success(f"**Answer:** {q['answer']}")
+                st.success(f"**Answer:** {_escape_currency_dollars(q['answer'])}")
 
                 # Show worked solution if available
                 if q.get("worked_solution"):
@@ -893,7 +920,7 @@ def main():
                         # Show text part (without image references)
                         text_part = re.sub(r'\[Solution (?:Image|URL): .+?\]', '', worked).strip()
                         if text_part:
-                            st.markdown(text_part)
+                            st.markdown(_escape_currency_dollars(text_part))
 
                         # Show image from Firebase URL
                         if img_url_match:
